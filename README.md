@@ -1,6 +1,6 @@
-# 📌 프로젝트명: DayMarker
+# 📌 프로젝트명: CineTrip
 
-> HTML/CSS/JavaScript 수업 중 제작한 스몰 프로젝트입니다.  
+> HTML/CSS/JavaScript 수업 중 제작한 팀 프로젝트입니다.  
 > 기초 개념 적용과 실습을 통해 기술 습득을 목표로 하였습니다.
 
 ---
@@ -76,21 +76,18 @@
 
 ### ✅ 메인화면
 
-![메인화면](assets/daymarker_main_a.png)  
 사용자 목표 입력, 명언 표시, 달력 구조가 포함된 기본 화면입니다.
 
 ---
 
 ### ✅ 목표 설정 시 안내
 
-![목표 설정](assets/daymarker_alert.png)  
 목표 입력 후 `Enter` 키를 누르면 로컬스토리지에 저장되고, 저장 완료 알림이 표시됩니다.
 
 ---
 
 ### ✅ 트래커 ❌ 표시 + 현재 날짜 강조
 
-![트래커 표시 및 현재 날짜](assets/daymarker_main.png)  
 ❌ 클릭 토글 방식으로 데일리 완료 상태를 기록할 수 있으며,  
 오늘 날짜는 연한 파란색 배경으로 표시되어 시각적으로 구분됩니다.
 
@@ -114,3 +111,8 @@
 - 하루에 여러 개의 할 일을 관리할 수 있는 **투두리스트 기능** 추가
 - **반응형 디자인** 적용 (모바일 대응)
 - ❌ 외에 **색상/체크 아이콘 등 다양한 마커 기능** 추가
+
+![coding-convention](</references/coding-convention(file-structure,%20name-rule).png>)
+![meeting-records](/references/meeting-records.png)
+![team-introduction](/references/team%20introduction.png)
+![schedules](/references/schedules.png)
