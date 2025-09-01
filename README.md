@@ -112,6 +112,14 @@
 - **반응형 디자인** 적용 (모바일 대응)
 - ❌ 외에 **색상/체크 아이콘 등 다양한 마커 기능** 추가
 
+<br><br><br>
+
+# 기타
+
+![화면설계서](https://www.figma.com/design/yNXL7zAFWojHc7Ltbbd2TA/%EC%8B%9C%EB%84%A4%ED%8A%B8%EB%A6%BD-%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&p=f&t=hPUxnlU5IGaXRypg-0)
+![WBS](https://docs.google.com/spreadsheets/d/10xFtgunZDW_-YtESeNXM0pqH3nmljE8b/edit?usp=sharing&ouid=117370317488578441607&rtpof=true&sd=true)
+![회의록](https://www.notion.so/Project-CineTrip-feat-Team-PopcornMate-261fff2fd51580ba81ddf96f85d5e5fc?source=copy_link)
+
 ![coding-convention](</references/coding-convention(file-structure,%20name-rule).png>)
 ![meeting-records](/references/meeting-records.png)
 ![team-introduction](/references/team%20introduction.png)
