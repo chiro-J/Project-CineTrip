@@ -1,9 +1,16 @@
-# 📌 프로젝트명: CineTrip
+# CineTrip (feat. _Team. POPCORN MATES_)
 
-> HTML/CSS/JavaScript 수업 중 제작한 팀 프로젝트입니다.  
-> 기초 개념 적용과 실습을 통해 기술 습득을 목표로 하였습니다.
+## Stamp Your Scene, Share Your Story.
+
+영화 속 멋있는 장소나 아름다운 자연경관이 나왔을 때 영화 속 주인공처럼 나도 한번 저 장소에 가보고 싶다는 누구나 할 법한 생각을 가진 사람들끼리의 커뮤니티 공간을 만들고자 했습니다.
 
 ---
+
+### Target Users
+
+1. 여행을 계획 중인데 미리 작성해둘 체크리스트가 필요한 사람
+2. 영화의 한 장면에 나온 장소를 직접 방문해보고 싶은 사람
+3. 영화의 한 장면에 나왔던 내가 다녀온 장소를 다른 사람들과 소통하고 싶은 사람
 
 ## 📆 프로젝트 기간
 
@@ -34,8 +41,21 @@
 
 ## 🧱 프로젝트 구조
 
+### Frontend
+
 ```bash
-📁 01_DayMarker/
+📁 aaar/
+├── index.html        # 메인 HTML
+├── daymarker.css     # 전체 스타일
+├── daymarker.js      # 날짜 렌더링 & 로직
+├── logo.png          # DayMarker 로고
+└── README.md         # 프로젝트 소개 문서
+```
+
+### Backend
+
+```bash
+📁 aaar/
 ├── index.html        # 메인 HTML
 ├── daymarker.css     # 전체 스타일
 ├── daymarker.js      # 날짜 렌더링 & 로직
@@ -93,19 +113,6 @@
 
 ---
 
-## 🧠 회고 요약
-
-### ❓ 어려웠던 점
-
-- 날짜 격자를 고정 크기로 유지하면서도 월별 일 수와 시작 요일을 정확히 배치하는 부분
-- ❌ 표시 상태를 월별로 로컬스토리지에 저장하고 불러오는 구조 설계
-
-### ✨ 배운 점
-
-- 날짜 관련 JavaScript 내장 객체 활용 (`Date`, `getDay()`, `getDate()` 등)
-- 로컬스토리지 상태 유지 방식과 배열 저장/불러오기 처리
-- HTML/CSS만으로 깔끔한 레이아웃 구현 (Flex/Grid, 버튼 스타일링 등)
-
 ### 🔧 보완하고 싶은 점
 
 - 하루에 여러 개의 할 일을 관리할 수 있는 **투두리스트 기능** 추가
@@ -116,12 +123,10 @@
 
 # 기타
 
-![화면설계서](https://www.figma.com/design/yNXL7zAFWojHc7Ltbbd2TA/%EC%8B%9C%EB%84%A4%ED%8A%B8%EB%A6%BD-%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&p=f&t=hPUxnlU5IGaXRypg-0)
-![WBS](https://docs.google.com/spreadsheets/d/10xFtgunZDW_-YtESeNXM0pqH3nmljE8b/edit?usp=sharing&ouid=117370317488578441607&rtpof=true&sd=true)
-![회의록](https://www.notion.so/Project-CineTrip-feat-Team-PopcornMate-261fff2fd51580ba81ddf96f85d5e5fc?source=copy_link)
+[팀프로젝트 드라이브](https://drive.google.com/drive/folders/1d_BWiEdW2WFQr20Z-tjzqK8EcEafP2Ih?usp=sharing)
 
-![coding-convention](</references/coding-convention(file-structure,%20name-rule).png>)
-![meeting-records](/references/meeting-records.png)
-![team-introduction](/references/team%20introduction.png)
-![schedules](/references/schedules.png)
-![git-branch](/references/git-branch.png)
+[화면설계서](https://www.figma.com/design/yNXL7zAFWojHc7Ltbbd2TA/%EC%8B%9C%EB%84%A4%ED%8A%B8%EB%A6%BD-%ED%99%94%EB%A9%B4%EC%84%A4%EA%B3%84%EC%84%9C?node-id=0-1&p=f&t=hPUxnlU5IGaXRypg-0)
+
+[WBS](https://docs.google.com/spreadsheets/d/10xFtgunZDW_-YtESeNXM0pqH3nmljE8b/edit?usp=sharing&ouid=117370317488578441607&rtpof=true&sd=true)
+
+[회의록](https://www.notion.so/Project-CineTrip-feat-Team-PopcornMate-261fff2fd51580ba81ddf96f85d5e5fc?source=copy_link)
