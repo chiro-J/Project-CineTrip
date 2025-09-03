@@ -1,5 +1,11 @@
 // hooks - useAuth 혹은 contexts - AuthContext.tsx 중에 하나 택 일.
 // 일관성 유지 중요 (기능별, 표기법)
+// 설치 패키지: yarn
+// ESLint, Prettier
+// 환경: Node.js, React vite
+// 언어: TypeScript
+// Tailwind CSS
+// 상태관리: Zustand
 
 ```
 src/
