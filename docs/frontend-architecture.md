@@ -85,7 +85,6 @@ src/
 │       └── Gallery.tsx            # GalleryGrid + BookmarkSection + MyPhotosSection + GalleryFilter 통합
 │
 ├── hooks/
-│   ├── useAuth.ts
 │   ├── useMovies.ts
 │   ├── useUpload.ts
 │   ├── useCheckList.ts
@@ -105,7 +104,6 @@ src/
 ├── routes/                      # URL 라우팅 정의
 │   ├── index.tsx               # 라우터 설정
 │   ├── ProtectedRoute.tsx      # 로그인 필요한 페이지
-│   ├── PublicRoute.tsx         # 공개 페이지
 │   └── PrivateRoute.tsx        # 본인만 접근 가능한 페이지
 │
 ├── data/                        # 예제/더미 데이터
@@ -115,7 +113,8 @@ src/
 │   └── recommendations.ts      # 더미 추천 장소 데이터
 │
 ├── theme/                       # DaisyUI 테마 커스터마이징
-│   └── daisyui/
+│   ├── daisyui/
+│   └── tailwind/
 │
 ├── types/
 │   ├── auth.ts
@@ -132,7 +131,11 @@ src/
 │   ├── icons/
 │   └── logos/
 │
+├── dist/                    #빌드 파일 저장
+│
+├── App.css
 ├── App.tsx
 ├── main.tsx
+├── vite-env.d.ts
 └── index.css
 ```
