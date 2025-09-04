@@ -6,7 +6,6 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   return {
     plugins: [react()],
-    root: "./src",
     build: {
       outDir: "./dist", //build 파일 저장 위치
       emptyOutDir: true, // 전에 있던 빌드 파일 지우고 다시 생성 설정
