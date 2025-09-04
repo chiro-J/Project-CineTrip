@@ -115,7 +115,8 @@ src/
 │   └── recommendations.ts      # 더미 추천 장소 데이터
 │
 ├── theme/                       # DaisyUI 테마 커스터마이징
-│   └── daisyui/
+│   ├── daisyui/
+│   └── tailwind/
 │
 ├── types/
 │   ├── auth.ts
@@ -132,7 +133,11 @@ src/
 │   ├── icons/
 │   └── logos/
 │
+├── dist/                    #빌드 파일 저장
+│
+├── App.css
 ├── App.tsx
 ├── main.tsx
+├── vite-env.d.ts
 └── index.css
 ```
