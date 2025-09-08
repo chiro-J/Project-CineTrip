@@ -28,7 +28,7 @@ const SocialLoginModal = () => {
 
       {/* 모달 오버레이 */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-300 bg-opacity-50">
           <div className="relative w-full max-w-md mx-auto bg-white shadow-2xl rounded-3xl">
             {/* 닫기 버튼 */}
             <Button
