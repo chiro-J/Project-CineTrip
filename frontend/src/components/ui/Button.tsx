@@ -15,7 +15,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-const Button: React.FC<ButtonProps> = ({
+export const Button: React.FC<ButtonProps> = ({
   variant = "primary",
   size = "md",
   loading = false,
@@ -51,10 +51,10 @@ const Button: React.FC<ButtonProps> = ({
 
   const variants = {
     primary: `
-      bg-gray-800 text-white
-      hover:bg-gray-700 active:bg-gray-900
+      !bg-gray-800 !text-white
+      hover:!bg-gray-700 active:!bg-gray-900
       focus:ring-gray-500
-      disabled:hover:bg-gray-800
+      disabled:hover:!bg-gray-800
     `,
     secondary: `
       bg-gray-200 text-gray-900
@@ -63,11 +63,11 @@ const Button: React.FC<ButtonProps> = ({
       disabled:hover:bg-gray-200
     `,
     outline: `
-      border-2 border-gray-800 text-gray-800 bg-transparent
-      hover:bg-gray-800 hover:text-white
+      border-2 border-gray-300 text-gray-600 bg-transparent
+      hover:bg-gray-800 hover:text-white hover:border-gray-800
       active:bg-gray-900 active:text-white
       focus:ring-gray-500
-      disabled:hover:bg-transparent disabled:hover:text-gray-800
+      disabled:hover:bg-transparent disabled:hover:text-gray-600
     `,
     ghost: `
       text-gray-800 bg-transparent
