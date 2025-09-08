@@ -50,7 +50,6 @@ export const Button: React.FC<ButtonProps> = ({
   `;
 
   const variants = {
-    // Button.tsx에서
     primary: `
       [background-color:#1f2937!important] [color:white!important]
       [&:hover]:[background-color:#374151!important]
