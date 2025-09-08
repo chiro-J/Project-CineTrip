@@ -50,11 +50,15 @@ export const Button: React.FC<ButtonProps> = ({
   `;
 
   const variants = {
+    // Button.tsx에서
     primary: `
-      !bg-gray-800 !text-white
-      hover:!bg-gray-700 active:!bg-gray-900
-      focus:ring-gray-500
-      disabled:hover:!bg-gray-800
+      [background-color:#1f2937!important] [color:white!important]
+      [&:hover]:[background-color:#374151!important]
+      [&:active]:[background-color:#111827!important]
+      [&:disabled:hover]:[background-color:#1f2937!important]
+      font-medium rounded-lg transition-all duration-200
+      focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500
+      disabled:opacity-50 disabled:cursor-not-allowed
     `,
     secondary: `
       bg-gray-200 text-gray-900

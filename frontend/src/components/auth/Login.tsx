@@ -31,12 +31,12 @@ const SocialLoginModal = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="relative w-full max-w-md mx-auto bg-white shadow-2xl rounded-3xl">
             {/* 닫기 버튼 */}
-            <button
+            <Button
               onClick={closeModal}
               className="absolute flex items-center justify-center w-8 h-8 text-2xl text-gray-400 top-4 right-4 hover:text-gray-600"
             >
               ×
-            </button>
+            </Button>
 
             {/* 모달 내용 */}
             <div className="px-8 py-12 text-center">
@@ -48,7 +48,7 @@ const SocialLoginModal = () => {
               {/* Google 로그인 버튼 */}
               <div className="mb-8">
                 <Button
-                  variant="outline"
+                  variant="primary"
                   size="lg"
                   fullWidth
                   loading={isLoggingIn}
