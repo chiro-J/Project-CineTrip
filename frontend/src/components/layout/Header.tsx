@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Avatar } from "../ui/Avatar"; // 가정된 Avatar 컴포넌트 경로
-import UserDropdownMenu from "./UserDropdown"; // UserDropdownMenu 컴포넌트 임포트
+import { Avatar } from "../ui/Avatar";
+import UserDropdown from "./UserDropdown";
 import logo from "../../assets/logos/logo.png";
+import { Button } from "../ui/Button";
 
 /**
  * 사용자 프로필 정보 인터페이스
@@ -11,7 +12,7 @@ import logo from "../../assets/logos/logo.png";
  */
 interface UserProfile {
   username: string;
-  email: string; // 드롭다운 메뉴에서 사용하기 위해 email 추가
+  email: string;
   avatarUrl: string;
 }
 
@@ -33,7 +34,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
    */
   const handleLogout = (): void => {
     console.log("Logout action triggered");
-    setIsDropdownOpen(false); // 로그아웃 시 드롭다운 닫기
+    setIsDropdownOpen(false);
   };
 
   // 드롭다운 메뉴 외부를 클릭했을 때 메뉴를 닫는 effect
@@ -56,11 +57,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
       {/* 1. 로고 영역 (이동 기능 제거) */}
       <div className="flex items-center space-x-2">
-        <img
-          src={logo}
-          alt="CineTrip Logo"
-          className="w-8 h-8 rounded-full" // 로고 스타일에 맞게 className을 수정하세요.
-        />
+        <img src={logo} alt="CineTrip Logo" className="w-8 h-8 rounded-full" />
         <span className="text-xl font-bold text-gray-800">CineTrip</span>
       </div>
 
@@ -76,7 +73,6 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
       {/* 3. 사용자 정보 및 드롭다운 영역 */}
       <div className="relative" ref={dropdownRef}>
         {user ? (
-          // 로그인 상태: 클릭 가능한 사용자 프로필 영역
           <>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -86,10 +82,9 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
               <span className="font-medium text-gray-700">{user.username}</span>
             </button>
 
-            {/* isDropdownOpen 상태가 true일 때만 드롭다운 메뉴 렌더링 */}
             {isDropdownOpen && (
               <div className="absolute right-0 z-50 mt-2 top-full">
-                <UserDropdownMenu
+                <UserDropdown
                   user={user}
                   onLogout={handleLogout}
                   onCloseMenu={() => setIsDropdownOpen(false)}
@@ -99,9 +94,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <button className="px-4 py-1.5 text-sm font-medium text-black bg-blue-600 rounded-md hover:bg-blue-700">
-            로그인
-          </button>
+          <Button variant="outline">로그인</Button>
         )}
       </div>
     </nav>

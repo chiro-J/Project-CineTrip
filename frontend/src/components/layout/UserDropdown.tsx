@@ -8,7 +8,7 @@ interface UserProfile {
   avatarUrl: string;
 }
 
-interface UserDropdownMenuProps {
+interface UserDropdownProps {
   user: UserProfile;
   onLogout: () => void;
   onCloseMenu?: () => void;
@@ -21,7 +21,7 @@ const UserDropdown = ({
   user,
   onLogout,
   onCloseMenu,
-}: UserDropdownMenuProps): React.ReactElement => {
+}: UserDropdownProps): React.ReactElement => {
   const handleItemClick = (menuName: string) => {
     console.log(`${menuName} menu clicked`);
     onCloseMenu?.();
@@ -77,7 +77,7 @@ const UserDropdown = ({
   );
 };
 
-// --- Helper Component: MenuItem ---
+// --- MenuItem ---
 interface MenuItemProps {
   icon: React.ReactNode;
   text: string;
