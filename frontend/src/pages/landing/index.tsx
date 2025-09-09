@@ -37,15 +37,6 @@ export const Header = ({ user }: HeaderProps): React.ReactElement => {
         <span className="text-xl font-bold text-gray-800">CineTrip</span>
       </div>
 
-      {/* 2. 검색창 영역 */}
-      <div className="flex-1 px-16">
-        <input
-          type="search"
-          placeholder="Search in Site"
-          className="w-1/2 px-4 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-        />
-      </div>
-
       {/* 3. 사용자 정보 및 드롭다운 영역 */}
       <div className="relative" >
         {user ? (
@@ -62,7 +53,7 @@ export const Header = ({ user }: HeaderProps): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <button className="px-4 py-1.5 text-sm font-medium text-black bg-blue-600 rounded-md hover:bg-blue-700">
+          <button className="px-4 py-1.5 text-sm font-medium text-black !bg-white rounded-md hover:!bg-gray-400">
             로그인
           </button>
         )}
@@ -287,3 +278,20 @@ function App() {
 
 export default App;
 
+
+// 랜딩 페이지 예제 코드
+
+// import { Landing, Header } from "./pages/landing";
+
+// import "./App.css";
+
+// function App() {
+//   return (
+//     <div>
+//       <Header />
+//       <Landing />
+//     </div>
+//   );
+// }
+
+// export default App;
