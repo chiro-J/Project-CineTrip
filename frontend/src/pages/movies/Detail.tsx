@@ -56,14 +56,15 @@ const handleClick = () => {
  */
 const MovieDetails = () => {
   return (
-    <div>
+    <div className='bg-white'>
         <Header />
-        <div className="bg-white text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+        <body className='bg-white'>
+            <div className="bg-white text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <div className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
                 
                 {/* 1. 영화 정보 섹션 */}
-                <section className="mb-16">
-                    <h2 className="mb-8 text-2xl font-bold text-center">영화 정보</h2>
+                <section className="mb-18">
+                    <h2 className="mt-8 mb-12 text-2xl font-bold text-center">영화 정보</h2>
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-12">
                         
                         {/* 영화 포스터 (Card 컴포넌트 위치) */}
@@ -73,17 +74,17 @@ const MovieDetails = () => {
 
                         {/* 영화 상세 정보 */}
                         <div className="col-span-2 space-y-6">
-                            <div>
-                                <h3 className="text-3xl font-bold">스파이더맨: 파 프롬 홈</h3>
+                            <div className='mb-8'>
+                                <h3 className="mb-8 text-3xl font-bold">스파이더맨: 파 프롬 홈</h3>
                                 <StarRating rating={3.6} />
                             </div>
-                            <div>
+                            <div className='mb-8 text-left'>
                                 <h4 className="text-lg font-semibold">줄거리</h4>
                                 <p className="mt-2 text-sm leading-relaxed text-gray-600">
                                     '엔드게임' 이후 변화된 세상, 스파이더맨 '피터 파커'는 학교 친구들과 유럽 여행을 떠나게 된다. 그런 그의 앞에 '닉 퓨리'가 나타나 도움을 요청하고, 정체불명의 조력자 '미스테리오'까지 합류하게 되면서 전 세계를 위협하는 새로운 빌런 '엘리멘탈 크리쳐스'와 맞서야만 하는 상황에 놓이게 되는데…
                                 </p>
                             </div>
-                            <div>
+                            <div className='text-left'>
                                 <h4 className="text-lg font-semibold">개봉일자</h4>
                                 <p className="mt-2 text-sm text-gray-600">2019년 7월 2일</p>
                             </div>
@@ -92,7 +93,7 @@ const MovieDetails = () => {
                 </section>
 
                 {/* 2. 영화 명장면 촬영지 섹션 */}
-                <section className="mb-16">
+                <section className="mb-18">
                     <h2 className="mb-8 text-2xl font-bold text-center">영화 명장면 촬영지</h2>
                     {/* Grid 컴포넌트 위치 (5개 아이템) */}
                     <GridLayout
@@ -102,7 +103,7 @@ const MovieDetails = () => {
                 </section>
 
                 {/* 3. 명장면 인근 추천 장소 섹션 */}
-                <section className="mb-16">
+                <section className="mb-18">
                     <div className='grid items-center grid-cols-3 mb-8'>
                         <div />
                         <h2 className="text-2xl font-bold text-center">촬영지 인근 추천 장소</h2>
@@ -143,6 +144,7 @@ const MovieDetails = () => {
 
             </div>
         </div>
+        </body>
     </div>
   );
 };
