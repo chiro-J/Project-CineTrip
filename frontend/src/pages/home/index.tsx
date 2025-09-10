@@ -86,7 +86,7 @@ const Home = () => {
     };
   }, [loading, hasMore]); // loading, hasMore가 바뀔 때 observer를 재설정
 
-  // [추가] 스크롤 위치를 감지하여 버튼 표시 여부를 결정하는 Effect
+  // 스크롤 위치를 감지하여 버튼 표시 여부를 결정하는 Effect
   useEffect(() => {
     const handleScroll = () => {
         if (window.scrollY > 300) {
@@ -102,6 +102,7 @@ const Home = () => {
     };
   }, []);
 
+  // 최상단 이동 함수
   const scrollToTop = () => {
     window.scrollTo({
         top: 0,
@@ -125,7 +126,7 @@ const Home = () => {
             {loading && <p className="text-center">Loading more images...</p>}
             {!hasMore && <p className="text-center">All images loaded.</p>}
         </main>
-        {/* [수정] 스크롤 최상단 이동 버튼 */}
+        {/* 스크롤 최상단 이동 버튼 */}
         {showScrollButton && (
             <button 
                 onClick={scrollToTop}
