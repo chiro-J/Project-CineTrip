@@ -23,7 +23,7 @@ interface HeaderProps {
  * 전역 네비게이션 바 (GNB) 컴포넌트 (UI 전용)
  * 사이트 로고, 검색 기능, 사용자 프로필 영역(드롭다운 포함)을 포함합니다.
  */
-export const Header = ({ user }: HeaderProps): React.ReactElement => {
+const Header = ({ user }: HeaderProps): React.ReactElement => {
 
   return (
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
@@ -62,7 +62,7 @@ export const Header = ({ user }: HeaderProps): React.ReactElement => {
   );
 };
 
-export const LandingStyles = () => (
+const LandingStyles = () => (
   <>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -205,6 +205,7 @@ export const Landing = () => {
 
     return (
         <>
+            <Header />
             <LandingStyles />
             <main className="relative">
 
