@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { GridLayout } from "../../components/layout/ImageContainer";
 
+import Header from "../../components/layout/Header";
+import SideNavigationBar from "../../components/layout/SideNavigationBar";
+
 // 테스트용 더미 이미지
 const MOCK_GRID_IMAGES = Array.from({ length: 10 }, (_, i) => ({
   id: `grid-${i + 1}`,
@@ -29,13 +32,14 @@ const MovieSearchMain = () => {
   };
 
   return (
-    <div className="px-4 py-8 mx-auto max-w-7xl">
-      {/* 헤더 섹션 */}
-      <div className="mb-8 text-center">
+    <div className="px-4 py-24 mx-auto max-w-7xl">
+      <Header />
+      <SideNavigationBar />
+      <div className="mb-24 text-center">
         <h1 className="mb-4 text-4xl font-bold text-gray-900">
           Find Your Next Movie
         </h1>
-        <p className="mb-6 text-lg text-gray-600">
+        <p className="mb-10 text-lg text-gray-600">
           Search across movies, users, and databases.
         </p>
 
@@ -49,13 +53,13 @@ const MovieSearchMain = () => {
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <Button onClick={handleSearch} className="px-8">
-            search
+            Search
           </Button>
         </div>
       </div>
 
       {/* 필터 버튼들 */}
-      <div className="flex justify-center gap-4 mb-8">
+      <div className="flex justify-center gap-8 mb-12">
         {filterOptions.map((option) => (
           <Button
             key={option.id}
