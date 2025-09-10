@@ -14,27 +14,49 @@ export interface NavigationItem {
   icon: string;
 }
 
+// JSDoc: 네비게이션 아이템의 데이터 구조를 정의합니다.
+/**
+ * 네비게이션 메뉴 아이템 인터페이스
+ * @property id - 각 아이템을 식별하기 위한 고유 ID
+ * @property label - 메뉴에 표시될 텍스트
+ * @property icon - 메뉴에 표시될 이모지 아이콘
+ */
+export interface NavigationItem {
+  id: string;
+  label: string;
+  icon: string;
+}
+
 // JSDoc: SideNavigationBar 컴포넌트의 props 타입을 정의합니다.
 /**
  * SideNavigationBar 컴포넌트 Props
- * @property activeItemId - 현재 활성화된 아이템의 ID
- * @property onItemClick - 아이템 클릭 시 호출될 콜백 함수
+ * @property isLoggedIn - 사용자의 로그인 상태. 제공되지 않으면 false로 간주됩니다.
+ * @property activeItemId - (선택사항) 외부에서 활성화된 아이템의 ID를 제어할 때 사용합니다.
+ * @property onItemClick - (선택사항) 외부에서 아이템 클릭 이벤트를 처리할 때 사용합니다.
  * @property onToggle - 사이드바의 열림/닫힘 상태가 변경될 때 호출될 콜백
  */
 interface SideNavigationBarProps {
-  activeItemId: string;
-  onItemClick: (id: string) => void;
+  isLoggedIn?: boolean; // 로그인 상태를 선택사항으로 변경하고 기본값을 부여합니다.
+  activeItemId?: string; // 선택사항으로 변경
+  onItemClick?: (id: string) => void; // 선택사항으로 변경
   onToggle?: (isOpen: boolean) => void;
 }
 
 /**
- * 토글 버튼이 내장된 독립적인 사이드 네비게이션 바 컴포넌트
+ * 토글 버튼이 내장된 독립적인 사이드 네비게이션 바 컴포넌트.
+ * activeItemId와 onItemClick prop이 제공되지 않으면 상태를 자체적으로 관리합니다.
  */
 const SideNavigationBar = ({
+  isLoggedIn = false, // 기본값을 false로 설정
   activeItemId,
   onItemClick,
   onToggle,
-}: SideNavigationBarProps): React.ReactElement => {
+}: SideNavigationBarProps): React.ReactElement | null => {
+  // 로그인 상태가 아니라면 컴포넌트를 렌더링하지 않습니다.
+  if (!isLoggedIn) {
+    return null;
+  }
+
   const [isOpen, setIsOpen] = useState(true);
 
   const fixedNavItems: NavigationItem[] = [
@@ -44,11 +66,26 @@ const SideNavigationBar = ({
     { id: "profile", label: "내 정보 수정", icon: "🛠️" },
   ];
 
-  const handleItemClick = (id: string): void => {
-    onItemClick(id);
-  };
+  // --- 상태 내부 관리 로직 추가 ---
+  // prop이 제공되지 않을 경우를 대비해 내부 상태를 관리합니다.
+  const [internalActiveId, setInternalActiveId] = useState(
+    fixedNavItems[0]?.id || ""
+  );
 
-  // 2. 토글 버튼 클릭 핸들러
+  // prop으로 activeItemId가 제공되면 prop 값을, 아니면 내부 상태 값을 사용합니다 (Controlled vs Uncontrolled).
+  const currentActiveId =
+    activeItemId !== undefined ? activeItemId : internalActiveId;
+
+  const handleItemClick = (id: string): void => {
+    // prop으로 onItemClick 핸들러가 제공되면 해당 핸들러를, 아니면 내부 상태를 업데이트합니다.
+    if (onItemClick) {
+      onItemClick(id);
+    } else {
+      setInternalActiveId(id);
+    }
+  };
+  // --- 여기까지 ---
+
   const handleToggle = (): void => {
     const newState = !isOpen;
     setIsOpen(newState);
@@ -59,20 +96,21 @@ const SideNavigationBar = ({
     fixed top-16 left-0 z-40 flex flex-col w-64 h-[calc(100vh-4rem)] bg-white border-r border-gray-200
     transition-transform duration-300 ease-in-out
     ${isOpen ? "translate-x-0" : "-translate-x-full"}
-    pt-2`;
+    pt-2
+  `;
 
-  // 3. isOpen 상태에 따라 버튼의 위치를 동적으로 변경하는 클래스
   const buttonClasses = `
-		fixed top-16 z-50 p-2 rounded-md hover:bg-gray-100
-		transition-all duration-300 ease-in-out
-		${isOpen ? "left-[16rem]" : "left-4"}`;
+    fixed top-16 z-50 p-2 rounded-md hover:bg-gray-100
+    transition-all duration-300 ease-in-out
+    ${isOpen ? "left-[16rem]" : "left-4"}
+  `;
 
   return (
     <>
       <button onClick={handleToggle} className={buttonClasses}>
         {isOpen ? (
           <span className="flex items-center justify-center w-5 h-5 bg-white rounded-sm shadow">
-            <ChevronLeft size={12} />
+            <ChevronLeft size={16} color="black" />
           </span>
         ) : (
           <ChevronRight size={24} />
@@ -86,7 +124,9 @@ const SideNavigationBar = ({
               <NavItem
                 key={item.id}
                 item={item}
-                isActive={item.id === activeItemId}
+                // 내부 상태 또는 외부 prop을 기준으로 활성화 상태를 결정합니다.
+                isActive={item.id === currentActiveId}
+                // 통합된 클릭 핸들러를 사용합니다.
                 onClick={() => handleItemClick(item.id)}
               />
             ))}
@@ -111,7 +151,7 @@ const NavItem = ({
 }: NavItemProps): React.ReactElement => {
   const itemClasses = `
     flex items-center w-full px-4 py-3 text-left transition-colors duration-200 rounded-lg
-    ${isActive ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"}
+    ${isActive ? "bg-gray-600 text-white" : "text-gray-600 hover:bg-gray-100"}
   `;
 
   return (
