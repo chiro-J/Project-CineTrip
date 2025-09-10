@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Button } from "../../components/ui/Button";
 import { GridLayout } from "../../components/layout/ImageContainer";
 
+import Header from "../../components/layout/Header";
+import SideNavigationBar from "../../components/layout/SideNavigationBar";
+
 // 테스트용 더미 이미지
 const MOCK_GRID_IMAGES = Array.from({ length: 10 }, (_, i) => ({
   id: `grid-${i + 1}`,
@@ -30,7 +33,8 @@ const MovieSearchMain = () => {
 
   return (
     <div className="px-4 py-24 mx-auto max-w-7xl">
-      {/* 헤더 섹션 */}
+      <Header />
+      <SideNavigationBar />
       <div className="mb-24 text-center">
         <h1 className="mb-4 text-4xl font-bold text-gray-900">
           Find Your Next Movie
