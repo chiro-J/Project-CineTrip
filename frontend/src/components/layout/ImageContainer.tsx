@@ -43,9 +43,7 @@ type GridLayoutProps = {
 
 const GridLayout: React.FC<GridLayoutProps> = ({ images, className = "" }) => {
   return (
-    <div className={`container mx-auto px-6`}>
-      {/* 컴포넌트 사용시 className에 grid-cols- 선언하기 */}
-      <div className={`grid gap-8 ${className}`}>
+      <div className={`grid gap-8 ${className}`}> {/* 컴포넌트 사용시 className에 grid-cols- 선언하기 */}
         {images.map((image) => (
           <div key={image.id} className="text-center">
             <Card
@@ -58,7 +56,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({ images, className = "" }) => {
           </div>
         ))}
       </div>
-    </div>
   );
 };
 
