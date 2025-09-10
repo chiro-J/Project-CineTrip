@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../../components/ui/Avatar"; // 가정된 Avatar 컴포넌트 경로
 import logo from "../../assets/logos/logo.png";
 import { GridLayout } from '../../components/layout/ImageContainer';
+import Footer from "../../components/layout/Footer";
 
 /**
  * 사용자 프로필 정보 인터페이스
@@ -23,7 +24,7 @@ interface HeaderProps {
  * 전역 네비게이션 바 (GNB) 컴포넌트 (UI 전용)
  * 사이트 로고, 검색 기능, 사용자 프로필 영역(드롭다운 포함)을 포함합니다.
  */
-export const Header = ({ user }: HeaderProps): React.ReactElement => {
+const Header = ({ user }: HeaderProps): React.ReactElement => {
 
   return (
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
@@ -109,7 +110,7 @@ const LandingStyles = () => (
 );
 
 
-const Landing = () => {
+export const Landing = () => {
     const viewportRef = useRef(null);
     const slidesRef = useRef<HTMLDivElement[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -205,6 +206,7 @@ const Landing = () => {
 
     return (
         <>
+            <Header />
             <LandingStyles />
             <main className="relative">
 
@@ -260,23 +262,24 @@ const Landing = () => {
                         <h3 className="text-3xl font-bold">다른 유저들은 어디에 갔을까요?</h3>
                         <p className="mt-2 text-sm text-gray-600">사용자들이 공유한 영화 속 여행지를 확인해보세요.</p>
                     </div>
-                    <GridLayout images={MOCK_GRID_IMAGES}  />
+                    <GridLayout images={MOCK_GRID_IMAGES} className="grid-cols-3" />
                 </section>
 
             </main>
+            <Footer />
         </>
     );
 };
 
-function App() {
-  return (
-    <div>
-      <Landing />
-    </div>
-  );
-}
+// function App() {
+//   return (
+//     <div>
+//       <Landing />
+//     </div>
+//   );
+// }
 
-export default App;
+// export default App;
 
 
 // 랜딩 페이지 예제 코드
