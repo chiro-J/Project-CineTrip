@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../../components/ui/Avatar"; // 가정된 Avatar 컴포넌트 경로
 import logo from "../../assets/logos/logo.png";
 import { GridLayout } from '../../components/layout/ImageContainer';
+import Footer from "../../components/layout/Footer";
 
 /**
  * 사용자 프로필 정보 인터페이스
@@ -265,6 +266,7 @@ export const Landing = () => {
                 </section>
 
             </main>
+            <Footer />
         </>
     );
 };
