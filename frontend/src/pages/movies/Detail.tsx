@@ -2,6 +2,7 @@ import Card from '../../components/ui/Card';
 import { GridLayout } from '../../components/layout/ImageContainer';
 import { Button } from '../../components/ui/Button';
 import Header from '../../components/layout/Header';
+import Footer from '../../components/layout/Footer';
 
 // 테스트를 위한 목업 이미지
 const MOCK_GRID_IMAGES1 = Array.from({ length: 5 }, (_, i) => ({
@@ -56,8 +57,10 @@ const handleClick = () => {
  */
 const MovieDetails = () => {
   return (
-    <div className='bg-white'>
-        <Header />
+    <>
+        <div>
+            <Header />
+        </div>
         <body className='bg-white'>
             <div className="bg-white text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <div className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
@@ -145,7 +148,8 @@ const MovieDetails = () => {
             </div>
         </div>
         </body>
-    </div>
+        <Footer />
+    </>
   );
 };
 
