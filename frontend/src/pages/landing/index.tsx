@@ -62,7 +62,7 @@ export const Header = ({ user }: HeaderProps): React.ReactElement => {
   );
 };
 
-const LandingStyles = () => (
+export const LandingStyles = () => (
   <>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -109,7 +109,7 @@ const LandingStyles = () => (
 );
 
 
-const Landing = () => {
+export const Landing = () => {
     const viewportRef = useRef(null);
     const slidesRef = useRef<HTMLDivElement[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
@@ -260,7 +260,7 @@ const Landing = () => {
                         <h3 className="text-3xl font-bold">다른 유저들은 어디에 갔을까요?</h3>
                         <p className="mt-2 text-sm text-gray-600">사용자들이 공유한 영화 속 여행지를 확인해보세요.</p>
                     </div>
-                    <GridLayout images={MOCK_GRID_IMAGES}  />
+                    <GridLayout images={MOCK_GRID_IMAGES} className="grid-cols-3" />
                 </section>
 
             </main>
@@ -268,15 +268,15 @@ const Landing = () => {
     );
 };
 
-function App() {
-  return (
-    <div>
-      <Landing />
-    </div>
-  );
-}
+// function App() {
+//   return (
+//     <div>
+//       <Landing />
+//     </div>
+//   );
+// }
 
-export default App;
+// export default App;
 
 
 // 랜딩 페이지 예제 코드
