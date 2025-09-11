@@ -3,6 +3,7 @@ import { useState } from "react";
 import Header from "../../components/layout/Header";
 import { Button } from "../../components/ui/Button";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
+import PostModal from "../../components/post/PostModal";
 
 type Item = {
   id: string | number;
@@ -67,6 +68,7 @@ interface TabContentProps {
   onAddClick?: () => void;
   onSearchMoviesClick?: () => void;
   isOwner: boolean;
+  onItemClick?: (item: Item) => void;
 }
 
 /**
@@ -79,6 +81,7 @@ const TabContent: React.FC<TabContentProps> = ({
   onAddClick,
   onSearchMoviesClick,
   isOwner,
+  onItemClick,
 }) => {
   if (!isPhotoTab && items.length === 0) {
     // isOwner가 true일 때만 action 버튼을 생성합니다.
@@ -120,14 +123,23 @@ const TabContent: React.FC<TabContentProps> = ({
         </button>
       )}
       {items.map((item) => (
-        <Card
+        <div
           key={item.id}
-          src={item.src}
-          alt={item.alt}
-          likes={item.likes}
-          fit="cover"
-          className={isPhotoTab ? "aspect-square" : "aspect-[2/3]"}
-        />
+          role="button"
+          tabIndex={0}
+          onClick={() => onItemClick?.(item)}
+          onKeyDown={(e) => e.key === "Enter" && onItemClick?.(item)}
+          className="rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <Card
+            key={item.id}
+            src={item.src}
+            alt={item.alt}
+            likes={item.likes}
+            fit="cover"
+            className={isPhotoTab ? "aspect-square" : "aspect-[2/3]"}
+          />
+        </div>
       ))}
     </>
   );
@@ -143,6 +155,18 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   const [activeTab, setActiveTab] = useState<"photos" | "movies" | "bookmarks">(
     "photos"
   );
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+  const openModal = (item: Item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedItem(null);
+  };
 
   const handleAddPhotoClick = () => {
     console.log("Open add photo modal");
@@ -168,6 +192,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             isPhotoTab={true}
             onAddClick={handleAddPhotoClick}
             isOwner={isOwner}
+            onItemClick={openModal}
           />
         );
       case "movies":
@@ -215,6 +240,14 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         <main className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {renderContent()}
         </main>
+        {isModalOpen && selectedItem && (
+          <PostModal
+            imageSrc={selectedItem.src}
+            imageAlt={selectedItem.alt}
+            onClose={closeModal}
+            isOpen={isModalOpen}
+          />
+        )}
       </div>
     </div>
   );
