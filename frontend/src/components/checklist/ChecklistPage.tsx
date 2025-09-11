@@ -38,6 +38,7 @@ import type {
   ChecklistType,
   NewChecklistDataType,
   ViewState,
+  ChecklistPageProps,
 } from "../../types/checklist";
 import CreateChecklistModal from "./ChecklistModal";
 import { Button } from "../ui/Button";
@@ -92,7 +93,7 @@ const EmptyState: FC<{
   onButtonClick: () => void;
 }> = ({ message, buttonText, onButtonClick }) => {
   return (
-    <div className="w-full max-w-4xl p-8 mx-auto text-center bg-white border border-gray-200 rounded-lg">
+    <div className="w-full p-8 mx-auto text-center bg-white border border-gray-200 rounded-lg">
       <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 border-2 border-gray-300 rounded-full">
         <CloseIcon className="w-12 h-12 text-gray-400" />
       </div>
@@ -126,11 +127,11 @@ const ChecklistCard: FC<{ checklist: ChecklistType }> = ({ checklist }) => {
   }, [items]);
 
   return (
-    <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-      <h3 className="mb-3 font-bold">{checklist.title}</h3>
+    <div className="p-4 text-left bg-white border border-gray-200 rounded-lg">
+      <h3 className="mb-3 font-bold text-left">{checklist.title}</h3>
       <div className="space-y-2">
         {sortedItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-3">
+          <div key={item.id} className="flex items-center justify-start gap-2">
             <input
               type="checkbox"
               id={`item-${item.id}`}
@@ -140,7 +141,7 @@ const ChecklistCard: FC<{ checklist: ChecklistType }> = ({ checklist }) => {
             />
             <label
               htmlFor={`item-${item.id}`}
-              className={`flex-1 cursor-pointer ${
+              className={`flex-1 cursor-pointer text-left ${
                 item.isCompleted
                   ? "text-gray-400 line-through"
                   : "text-gray-800"
@@ -171,7 +172,7 @@ const ChecklistDisplay: FC<{
   showCloseButton,
 }) => {
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold">체크리스트</h2>
         <Button variant="outline" onClick={onCreateNew}>
@@ -186,14 +187,14 @@ const ChecklistDisplay: FC<{
       {showMoreButton && (
         <div className="mt-6 text-center">
           <Button variant="outline" onClick={onShowMore}>
-            더보기
+            펼치기
           </Button>
         </div>
       )}
       {showCloseButton && (
         <div className="mt-6 text-center">
           <Button variant="outline" onClick={onCloseMore}>
-            닫기
+            접기
           </Button>
         </div>
       )}
@@ -203,7 +204,10 @@ const ChecklistDisplay: FC<{
 
 // --- 메인 페이지 컴포넌트 ---
 
-const ChecklistPage: FC = () => {
+const ChecklistPage: FC<ChecklistPageProps> = ({
+  movies = MOCK_MOVIES,
+  locations = MOCK_FILMING_LOCATIONS,
+}) => {
   const [viewState, setViewState] = useState<ViewState>("hasChecklist");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [checklists, setChecklists] =
@@ -293,18 +297,18 @@ const ChecklistPage: FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-4 font-sans text-gray-900 bg-gray-100 sm:p-8">
-      <div className="max-w-6xl mx-auto">
-        <main>{renderContent()}</main>
-      </div>
+    <section className="w-full">
+      {" "}
+      {/* 임베드 섹션: 높이 고정/배경/패딩 없음 */}
+      <main>{renderContent()}</main>
       <CreateChecklistModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onCreate={handleCreateChecklist}
-        movies={[]}
-        locations={{}}
+        movies={movies}
+        locations={locations}
       />
-    </div>
+    </section>
   );
 };
 
