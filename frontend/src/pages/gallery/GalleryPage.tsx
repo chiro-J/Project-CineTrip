@@ -156,15 +156,13 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
     "photos"
   );
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-  const openModal = (item: Item) => {
+  const handleItemClick = (item: Item) => {
     setSelectedItem(item);
-    setIsModalOpen(true);
   };
+
   const closeModal = () => {
-    setIsModalOpen(false);
     setSelectedItem(null);
   };
 
@@ -192,7 +190,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             isPhotoTab={true}
             onAddClick={handleAddPhotoClick}
             isOwner={isOwner}
-            onItemClick={openModal}
+            onItemClick={handleItemClick}
           />
         );
       case "movies":
@@ -201,6 +199,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             items={mockMovies}
             emptyMessage="감상한 영화가 없습니다."
             isOwner={isOwner}
+            onItemClick={handleItemClick}
           />
         );
       case "bookmarks":
@@ -210,13 +209,13 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             emptyMessage="북마크한 영화가 없습니다."
             onSearchMoviesClick={handleSearchMoviesClick}
             isOwner={isOwner}
+            onItemClick={handleItemClick}
           />
         );
       default:
         return null;
     }
   };
-
   return (
     // 전체 레이아웃을 스크롤 가능하게 만듭니다.
     <div className="w-full h-full bg-gray-50">
@@ -240,14 +239,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         <main className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {renderContent()}
         </main>
-        {isModalOpen && selectedItem && (
-          <PostModal
-            imageSrc={selectedItem.src}
-            imageAlt={selectedItem.alt}
-            onClose={closeModal}
-            isOpen={isModalOpen}
-          />
-        )}
+        <PostModal item={selectedItem} onClose={closeModal} />
       </div>
     </div>
   );

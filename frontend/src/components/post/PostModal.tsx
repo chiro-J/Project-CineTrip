@@ -1,35 +1,38 @@
 import { useState, useEffect, type SetStateAction } from "react";
-import { Heart, MapPin, Share2, Trash2, X } from "lucide-react";
+import { Heart, MapPin, Share2, Trash2 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
 
 /**
- * 메인 컴포넌트
- * @param imageSrc -  클릭한 카드의 이미지
- * @param imageAlt -  클릭한 카드의 alt
- * @param authorName - 작성자 표시
- * @param locationLabel - 위치 텍스트
- * @param onClose - 닫기 핸들러
+ * 보여줄 아이템의 타입 정의
  */
+type ModalItem = {
+  src: string;
+  alt?: string;
+};
 
+/**
+ * 메인 컴포넌트 Props
+ * @param item - 클릭한 카드의 정보 (src, alt). null이면 모달이 닫힙니다.
+ * @param onClose - 닫기 핸들러 (부모의 item 상태를 null로 설정)
+ * @param authorName - 작성자 이름
+ * @param locationLabel - 위치 텍스트
+ */
 type PostModalProps = {
-  imageSrc: string;
-  imageAlt?: string;
+  item: ModalItem | null;
+  onClose: () => void;
   authorName?: string;
   locationLabel?: string;
-  onClose: () => void;
-  isOpen: boolean;
 };
 
 const PostModal: React.FC<PostModalProps> = ({
-  isOpen,
+  item,
   onClose,
-  imageSrc,
-  imageAlt = "Post content",
   authorName = "Newbie",
   locationLabel = "Tower Bridge, London",
 }) => {
-  if (!isOpen) return null; // ✅ 닫혀 있으면 렌더 안함
+  // item prop이 null이면 모달을 렌더링하지 않습니다.
+  if (!item) return null;
 
   // (선택) ESC로 닫기 + 스크롤 잠금
   useEffect(() => {
@@ -58,7 +61,6 @@ const PostModal: React.FC<PostModalProps> = ({
   const INITIAL_COMMENT_COUNT = 2;
 
   // 이벤트 핸들러 함수
-
   const handleFollowClick = () => {
     setIsFollowing(!isFollowing);
   };
@@ -77,7 +79,6 @@ const PostModal: React.FC<PostModalProps> = ({
       })
       .catch((err) => {
         console.error("링크 복사 실패:", err);
-        // execCommand는 오래된 방식이지만, https가 아닌 환경이나 iframe에서 clipboard API가 동작하지 않을 때를 위한 fallback입니다.
         const textArea = document.createElement("textarea");
         textArea.value = url;
         document.body.appendChild(textArea);
@@ -95,10 +96,9 @@ const PostModal: React.FC<PostModalProps> = ({
   };
 
   const handleDeleteClick = () => {
-    // 실제 구현에서는 확인 모달을 띄우고 삭제 API를 호출합니다.
     if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       console.log("Post deleted!");
-      // UI에서 게시물 제거 로직 추가
+      onClose(); // 예시: 삭제 후 모달 닫기
     }
   };
 
@@ -117,6 +117,7 @@ const PostModal: React.FC<PostModalProps> = ({
     ]);
     setNewComment("");
   };
+
   const commentsToShow = showAllComments
     ? comments
     : comments.slice(0, INITIAL_COMMENT_COUNT);
@@ -124,6 +125,9 @@ const PostModal: React.FC<PostModalProps> = ({
   const handleToggleComments = () => {
     setShowAllComments(!showAllComments);
   };
+
+  // item prop에서 이미지 소스와 alt 텍스트를 추출
+  const { src: imageSrc, alt: imageAlt } = item;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -138,7 +142,7 @@ const PostModal: React.FC<PostModalProps> = ({
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
               <Avatar size="sm" />
-              <span className="font-semibold text-gray-800">Newbie</span>
+              <span className="font-semibold text-gray-800">{authorName}</span>
             </div>
             <Button
               variant={isFollowing ? "secondary" : "primary"}
@@ -150,11 +154,10 @@ const PostModal: React.FC<PostModalProps> = ({
           </div>
 
           {/* --- 이미지 --- */}
-
-          <div className="flex items-center justify-center w-full bg-gray-200 aspect-square">
+          <div className="flex items-center justify-center w-full bg-white aspect-square">
             <img
               src={imageSrc}
-              alt={imageAlt}
+              alt={imageAlt || "Post content"}
               className="object-contain w-full h-full rounded-lg"
               onError={(e) => {
                 e.currentTarget.src =
@@ -162,6 +165,7 @@ const PostModal: React.FC<PostModalProps> = ({
               }}
             />
           </div>
+
           {/* --- 액션 버튼 --- */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 pl-2">
@@ -171,7 +175,9 @@ const PostModal: React.FC<PostModalProps> = ({
                 className="p-3"
               >
                 <Heart
-                  className={`h-5 w-5 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-110 ${isLiked ? "text-red-500 fill-red-500" : "text-gray-700"}`}
+                  className={`h-5 w-5 cursor-pointer transition-transform duration-200 ease-in-out hover:scale-110 ${
+                    isLiked ? "text-red-500 fill-red-500" : "text-gray-700"
+                  }`}
                   strokeWidth={2}
                 />
               </button>
@@ -204,7 +210,7 @@ const PostModal: React.FC<PostModalProps> = ({
           <div className="px-4 pb-4 space-y-3 text-left border-t border-gray-200">
             <div className="flex items-center gap-2 pt-4">
               <MapPin className="flex-shrink-0 w-5 h-5 text-gray-500" />
-              <p className="text-sm text-gray-600">Tower Bridge, London</p>
+              <p className="text-sm text-gray-600">{locationLabel}</p>
             </div>
             <p className="pt-2 text-gray-800 ">
               Lorem Ipsum is simply dummy text of the printing and typesetting
@@ -248,6 +254,7 @@ const PostModal: React.FC<PostModalProps> = ({
               </div>
             ))}
           </div>
+
           <div className="px-4 pt-4 pb-4 space-y-3">
             {comments.length > INITIAL_COMMENT_COUNT && (
               <button
@@ -261,9 +268,9 @@ const PostModal: React.FC<PostModalProps> = ({
             )}
           </div>
           <style>{`
-  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-  .no-scrollbar::-webkit-scrollbar { display: none; }
-`}</style>
+            .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+            .no-scrollbar::-webkit-scrollbar { display: none; }
+          `}</style>
         </div>
       </div>
     </div>
