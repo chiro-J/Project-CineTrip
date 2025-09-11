@@ -66,7 +66,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
 const LandingStyles = () => (
   <>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" />
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
     <style>{`
         body {
@@ -112,7 +112,7 @@ const LandingStyles = () => (
 
 export const Landing = () => {
     const viewportRef = useRef(null);
-    const slidesRef = useRef<HTMLDivElement[]>([]);
+    const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
     const [activeIndex, setActiveIndex] = useState(0);
     const isAnimatingRef = useRef(false);
     
@@ -241,7 +241,7 @@ export const Landing = () => {
                             {slidesData.map((slide, index) => (
                                 <div 
                                     key={slide.id}
-                                    ref={el => (slidesRef.current[index] = el!)}
+                                    ref={el => { slidesRef.current[index] = el; }}
                                     className="flex items-center justify-center p-4 carousel-slide"
                                 >
                                     <div className="relative text-center">
