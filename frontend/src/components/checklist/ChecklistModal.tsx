@@ -58,7 +58,12 @@ const CreateChecklistModal: FC<{
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
       <div className="relative w-full max-w-lg p-8 bg-white rounded-lg shadow-xl">
-        <Button variant="outline" onClick={onClose} aria-label="Close modal">
+        <Button
+          variant="outline"
+          onClick={onClose}
+          aria-label="Close modal"
+          className="absolute right-5"
+        >
           <CloseIcon />
         </Button>
 
@@ -75,8 +80,8 @@ const CreateChecklistModal: FC<{
                   onClick={() => handleSelectMovie(movie)}
                   className={`px-4 py-1.5 border rounded-md transition-colors text-sm ${
                     selectedMovie === movie
-                      ? "bg-gray-800 text-white border-gray-800"
-                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                      ? "bg-gray-300 text-black border-gray-800"
+                      : "bg-white text-gray-700 border-gray-300 hover:border-black"
                   }`}
                 >
                   {movie}

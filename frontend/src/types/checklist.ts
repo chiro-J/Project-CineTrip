@@ -9,7 +9,10 @@ export type ChecklistItemType = {
   content: string;
   isCompleted: boolean;
 };
-
+export type ChecklistPageProps = {
+  movies?: string[];
+  locations?: { [key: string]: string[] };
+};
 /**
  * @typedef {object} ChecklistType
  * @property {number} id - 체크리스트의 고유 ID
