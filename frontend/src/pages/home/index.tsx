@@ -111,14 +111,14 @@ const Home = () => {
   };
 
   return (
-    <body className='bg-white'>
+    <>
         <SideNavigationBar isLoggedIn={true} />
-        <div className="bg-white mb-6 text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+        <div className="mb-6 text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <nav>
                 <Header />
             </nav>
         </div>
-        <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8 bg-white">
+        <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
             <InfiniteMasonryLayout images={images} />
             {/* 스크롤 감지를 위한 타겟 요소 */}
             <div ref={observerTarget} style={{ height: "20px" }} />
@@ -130,15 +130,15 @@ const Home = () => {
         {showScrollButton && (
             <button 
                 onClick={scrollToTop}
-                className="fixed bottom-8 right-8 z-50 w-18 h-18 bg-white border border-gray-200 text-gray-700 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-100 transition-colors duration-300"
+                className="fixed z-50 flex items-center justify-center text-gray-700 transition-colors duration-300 bg-white border border-gray-200 rounded-full shadow-lg bottom-8 right-8 w-18 h-18 hover:bg-gray-100"
                 aria-label="Scroll to top"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                 </svg>
             </button>
         )}
-    </body>
+    </>
   );
 };
 

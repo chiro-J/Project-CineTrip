@@ -54,7 +54,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <button className="px-4 py-1.5 text-sm font-medium text-black !bg-white rounded-md hover:!bg-gray-400">
+          <button className="px-4 py-1.5 text-sm font-medium text-black bg-white rounded-md hover:!bg-gray-400">
             로그인
           </button>
         )}
@@ -71,7 +71,7 @@ const LandingStyles = () => (
     <style>{`
         body {
             font-family: 'Noto Sans KR', sans-serif;
-            background-color: #FFFFFF; /* 흰색 배경으로 변경 */
+            // background-color: #FFFFFF; /* 흰색 배경으로 변경 */
             color: #000000; /* 기본 텍스트 검은색으로 변경 */
             overflow-x: hidden;
         }
@@ -208,7 +208,7 @@ export const Landing = () => {
         <>
             <Header />
             <LandingStyles />
-            <main className="relative">
+            <main className="relative mt-16">
 
                 {/* Hero Section */}
                 <section className="relative h-[70vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-gray-700 text-white">
@@ -222,7 +222,7 @@ export const Landing = () => {
                         </p>
                         <div className="flex justify-center pt-6 space-x-4">
                             <button className="px-8 py-3 text-sm font-bold text-white transition-all bg-black rounded-md hover:bg-gray-800">내 여행지 찾아보기</button>
-                            <button className="px-8 py-3 text-sm transition-all border border-gray-500 rounded-md hover:bg-gray-600">오늘의 추천 명소</button>
+                            <button className="px-8 py-3 text-sm text-gray-400 transition-all border border-gray-500 rounded-md hover:bg-gray-600">오늘의 추천 명소</button>
                         </div>
                     </div>
                 </section>
@@ -230,7 +230,7 @@ export const Landing = () => {
                 {/* Location Highlight - 삭제 (디자인 시안에 없음) */}
 
                 {/* Cover Flow Carousel Section */}
-                <section className="relative py-24 mt-12 text-black bg-white">
+                <section className="relative py-24 mt-12 text-black">
                     <span className="font-serif -translate-x-1/2 decorative-text -top-8 left-1/2 opacity-5">Movie</span>
                     <div className="mb-12 text-center">
                         <h3 className="text-3xl font-bold">오늘의 영화 명장면</h3>
@@ -256,7 +256,7 @@ export const Landing = () => {
                 </section>
 
                 {/* User Trips Grid Section */}
-                <section className="relative py-24 text-black bg-white">
+                <section className="relative py-24 text-black">
                     <span className="font-serif translate-x-1/2 decorative-text -top-8 right-1/2 opacity-5">Where</span>
                     <div className="mb-12 text-center">
                         <h3 className="text-3xl font-bold">다른 유저들은 어디에 갔을까요?</h3>
