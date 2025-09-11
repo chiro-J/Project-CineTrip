@@ -207,6 +207,7 @@ export const Landing = () => {
     });
   }, [activeIndex, totalSlides]);
 
+
   // Effect to set up and clean up the wheel event listener
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
@@ -330,6 +331,7 @@ export const Landing = () => {
       <Footer />
     </>
   );
+
 };
 
 // function App() {
