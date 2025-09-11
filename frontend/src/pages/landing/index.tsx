@@ -62,10 +62,12 @@ const LandingStyles = () => (
   <>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+
     <style>{`
         body {
             font-family: 'Noto Sans KR', sans-serif;
@@ -108,6 +110,7 @@ const LandingStyles = () => (
 );
 
 export const Landing = () => {
+
   const viewportRef = useRef(null);
   const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -331,6 +334,7 @@ export const Landing = () => {
       <Footer />
     </>
   );
+
 
 };
 
