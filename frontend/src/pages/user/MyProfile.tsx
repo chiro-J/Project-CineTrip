@@ -52,7 +52,7 @@ const UserProfilePage = (): React.ReactElement => {
   };
 
   return (
-    <div className="flex min-h-screen font-sans bg-white">
+    <div className="flex font-sans bg-white max-w-screen">
       <SideNavigationBar isLoggedIn={true} />
       <div className="flex flex-col flex-1">
         <Header />
@@ -97,7 +97,7 @@ const UserProfilePage = (): React.ReactElement => {
                 edit
               </Button>
             </div>
-            <GridLayout images={uploadedPhotos} />
+            <GridLayout images={uploadedPhotos} className="grid-cols-4" />
           </section>
 
           {/* 4. 감상한 영화 섹션 */}
@@ -112,7 +112,7 @@ const UserProfilePage = (): React.ReactElement => {
                 more
               </Button>
             </div>
-            <GridLayout images={watchedMovies} />
+            <GridLayout images={watchedMovies} className="grid-cols-4" />
           </section>
         </main>
       </div>
