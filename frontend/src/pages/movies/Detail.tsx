@@ -61,15 +61,14 @@ const MovieDetails = () => {
         <div>
             <Header />
         </div>
-        <body className='bg-white'>
-            <div className="bg-white text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+        <div className="text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <div className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
-                
+                    
                 {/* 1. 영화 정보 섹션 */}
                 <section className="mb-18">
                     <h2 className="mt-8 mb-12 text-2xl font-bold text-center">영화 정보</h2>
                     <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-12">
-                        
+                            
                         {/* 영화 포스터 (Card 컴포넌트 위치) */}
                         <div className="col-span-1">
                             <Card src="https://placehold.co/400x500/E0E0E0/333333?text=Movie+Poster" alt="영화 포스터"/>
@@ -136,7 +135,7 @@ const MovieDetails = () => {
                                 더보기
                             </Button>
                         </div>
-                        
+                            
                     </div>
                     {/* Grid 컴포넌트 위치 */}
                     <GridLayout
@@ -147,7 +146,6 @@ const MovieDetails = () => {
 
             </div>
         </div>
-        </body>
         <Footer />
     </>
   );
