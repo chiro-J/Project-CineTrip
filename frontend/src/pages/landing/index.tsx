@@ -3,6 +3,7 @@ import { Avatar } from "../../components/ui/Avatar"; // 가정된 Avatar 컴포�
 import logo from "../../assets/logos/logo.png";
 import { GridLayout } from "../../components/layout/ImageContainer";
 import Footer from "../../components/layout/Footer";
+import SocialLoginModal from "../../components/auth/Login";
 
 /**
  * 사용자 프로필 정보 인터페이스
@@ -20,11 +21,15 @@ interface HeaderProps {
   user?: UserProfile;
 }
 
+interface LandingHeaderProps {
+  user?: UserProfile;
+  onLoginClick: () => void;
+}
+
 /**
- * 전역 네비게이션 바 (GNB) 컴포넌트 (UI 전용)
- * 사이트 로고, 검색 기능, 사용자 프로필 영역(드롭다운 포함)을 포함합니다.
+ * 랜딩페이지용 헤더 컴포넌트
  */
-const Header = ({ user }: HeaderProps): React.ReactElement => {
+const Header = ({ user, onLoginClick }: LandingHeaderProps): React.ReactElement => {
   return (
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
       {/* 1. 로고 영역 (이동 기능 제거) */}
@@ -49,7 +54,10 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <button className="px-4 py-1.5 text-sm font-medium text-black bg-white rounded-md hover:!bg-gray-400">
+          <button 
+            onClick={onLoginClick}
+            className="px-4 py-1.5 text-sm font-medium text-black bg-white rounded-md hover:!bg-gray-400"
+          >
             로그인
           </button>
         )}
@@ -110,6 +118,7 @@ const LandingStyles = () => (
 );
 
 export const Landing = () => {
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const viewportRef = useRef(null);
   const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -246,11 +255,20 @@ export const Landing = () => {
     };
   }, [totalSlides]);
 
+  const handleLoginClick = () => {
+    setIsLoginModalOpen(true);
+  };
+
+  const handleLoginModalClose = () => {
+    setIsLoginModalOpen(false);
+  };
+
   return (
     <>
-      <Header />
+      <Header onLoginClick={handleLoginClick} />
+      <SocialLoginModal isOpen={isLoginModalOpen} onClose={handleLoginModalClose} />
       <LandingStyles />
-      <main className="relative mt-16">
+      <main className="relative mt-16" onClick={handleLoginClick}>
         {/* Hero Section */}
         <section className="relative h-[70vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-gray-700 text-white">
           <div className="relative z-10 space-y-4">
@@ -263,10 +281,16 @@ export const Landing = () => {
               확인하세요.
             </p>
             <div className="flex justify-center pt-6 space-x-4">
-              <button className="px-8 py-3 text-sm font-bold text-white transition-all bg-black rounded-md hover:bg-gray-800">
+              <button 
+                onClick={handleLoginClick}
+                className="px-8 py-3 text-sm font-bold text-white transition-all bg-black rounded-md hover:bg-gray-800"
+              >
                 내 여행지 찾아보기
               </button>
-              <button className="px-8 py-3 text-sm text-gray-400 transition-all border border-gray-500 rounded-md hover:bg-gray-600">
+              <button 
+                onClick={handleLoginClick}
+                className="px-8 py-3 text-sm text-gray-400 transition-all border border-gray-500 rounded-md hover:bg-gray-600"
+              >
                 오늘의 추천 명소
               </button>
             </div>

@@ -6,6 +6,8 @@ import { Button } from "../../components/ui/Button";
 import { GridLayout } from "../../components/layout/ImageContainer";
 import ChecklistPage from "../../components/checklist/ChecklistPage";
 import { Avatar } from "../../components/ui/Avatar";
+import { useNavigate } from "react-router-dom";
+import AuthContext, { useAuth } from "../../contexts/AuthContext";
 
 // --- Mock Data ---
 const uploadedPhotos = [
@@ -41,28 +43,35 @@ const watchedMovies = [
  * @returns {React.ReactElement}
  */
 const UserProfilePage = (): React.ReactElement => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
   const handleEditProfileClick = (): void => {
     console.log("Edit Profile button clicked");
+    // 실제로는 로그인된 사용자의 ID를 사용해야 합니다
+    navigate("/user/1/edit"); // 임시로 1을 사용, 실제로는 useAuthStore에서 user.id를 가져와야 함
   };
   const handleEditPhotosClick = (): void => {
     console.log("Edit photos button clicked");
+    navigate("/profile/gallery");
   };
   const handleMoreMoviesClick = (): void => {
     console.log("More movies button clicked");
+    navigate("/profile/gallery?tab=movies");
   };
 
   return (
     <div className="flex font-sans bg-white max-w-screen">
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
       <div className="flex flex-col flex-1">
         <Header />
         <main className="flex-1 p-16">
           {/* 1. 사용자 프로필 섹션 */}
           <section className="flex justify-between mt-6">
             <div className="flex gap-6">
-              <Avatar size="xl" />
+              <Avatar size="xl" src={user?.avatarUrl} />
               <div className="text-left" style={{ textAlign: "left" }}>
-                <h1 className="text-2xl font-bold">사용자 이름</h1>
+                <h1 className="text-2xl font-bold">{user?.username}</h1>
                 <p className="mt-1 text-gray-600">Traveler, Foodie</p>
                 <p className="mt-1 text-gray-600">
                   Adventure seeker and culinary enthusiast.

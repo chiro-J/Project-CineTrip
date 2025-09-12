@@ -61,7 +61,7 @@ const Profile = () => {
 
     return (
         <>
-        <SideNavigationBar isLoggedIn={true} />
+        <SideNavigationBar />
         <nav>
             <Header />
         </nav>

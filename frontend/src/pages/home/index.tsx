@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react';
 import { InfiniteMasonryLayout } from "../../components/layout/ImageContainer";
 import Header from '../../components/layout/Header';
 import SideNavigationBar from '../../components/layout/SideNavigationBar';
+import SocialLoginModal from '../../components/auth/Login';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
@@ -43,16 +46,48 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
  */
 
 const Home = () => {
+  const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true); // 더 불러올 데이터가 있는지 여부
   const observerTarget = useRef(null); // 스크롤 감지를 위한 타겟 요소
   const [showScrollButton, setShowScrollButton] = useState(false); // 스크롤 최상단 이동 버튼 표시 여부
+  const [showLoginModal, setShowLoginModal] = useState(false); // 로그인 모달 표시 여부
+  const [hasTriggeredModal, setHasTriggeredModal] = useState(false); // 모달이 이미 트리거되었는지 확인
+
+  // 로그인 상태 변경 시 상태 초기화
+  useEffect(() => {
+    if (isLoggedIn) {
+      setShowLoginModal(false);
+      setHasTriggeredModal(false);
+    }
+  }, [isLoggedIn]);
+
+  // 비로그인 사용자 스크롤 감지
+  useEffect(() => {
+    if (!isLoggedIn && !hasTriggeredModal) {
+      const handleScroll = () => {
+        // 화면 높이의 절반 정도 스크롤하면 로그인 모달 표시
+        if (window.scrollY > window.innerHeight * 0.5) {
+          setShowLoginModal(true);
+          setHasTriggeredModal(true);
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll);
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
+  }, [isLoggedIn, hasTriggeredModal]);
 
   // 이미지 데이터를 불러오는 함수
   const loadMoreImages = async () => {
     if (loading || !hasMore) return;
+    
+    // 비로그인 사용자이고 로그인 모달이 표시되었으면 로딩 중지
+    if (!isLoggedIn && showLoginModal) return;
+    
     setLoading(true);
     const newImages = await fetchImages(page);
     if (newImages.length === 0) {
@@ -84,7 +119,7 @@ const Home = () => {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [loading, hasMore]); // loading, hasMore가 바뀔 때 observer를 재설정
+  }, [loading, hasMore, showLoginModal]); // loading, hasMore, showLoginModal이 바뀔 때 observer를 재설정
 
   // 스크롤 위치를 감지하여 버튼 표시 여부를 결정하는 Effect
   useEffect(() => {
@@ -110,9 +145,18 @@ const Home = () => {
     });
   };
 
+  // 로그인 모달 닫기 핸들러 - Landing 페이지로 이동
+  const handleLoginModalClose = () => {
+    if (!isLoggedIn) {
+      navigate('/');
+    } else {
+      setShowLoginModal(false);
+    }
+  };
+
   return (
     <>
-        <SideNavigationBar isLoggedIn={true} />
+        <SideNavigationBar />
         <div className="mb-6 text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <nav>
                 <Header />
@@ -138,6 +182,12 @@ const Home = () => {
                 </svg>
             </button>
         )}
+        
+        {/* 로그인 모달 */}
+        <SocialLoginModal 
+          isOpen={showLoginModal} 
+          onClose={handleLoginModalClose} 
+        />
     </>
   );
 };

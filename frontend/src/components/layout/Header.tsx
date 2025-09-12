@@ -1,34 +1,24 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../ui/Avatar";
 import UserDropdown from "./UserDropdown";
+import SocialLoginModal from "../auth/Login";
 import logo from "../../assets/logos/logo.png";
 import { Button } from "../ui/Button";
 import { Search } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
- * 사용자 프로필 정보 인터페이스
- * @property username - 사용자 이름
- * @property email - 사용자 이메일 (드롭다운 메뉴에서 필요)
- * @property avatarUrl - 사용자 아바타 이미지 URL
- */
-interface UserProfile {
-  username: string;
-  email: string;
-  avatarUrl: string;
-}
-
-interface HeaderProps {
-  user?: UserProfile;
-}
-
-/**
- * 전역 네비게이션 바 (GNB) 컴포넌트 (UI 전용)
+ * 전역 네비게이션 바 (GNB) 컴포넌트
  * 사이트 로고, 검색 기능, 사용자 프로필 영역(드롭다운 포함)을 포함합니다.
  */
-const Header = ({ user }: HeaderProps): React.ReactElement => {
+const Header = (): React.ReactElement => {
+  const { user, isLoggedIn, logout } = useAuth();
   // 드롭다운 메뉴의 열림/닫힘 상태를 관리하는 state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // 검색어 상태를 관리하는 state
   const [searchQuery, setSearchQuery] = useState("");
@@ -58,11 +48,33 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
   };
 
   /**
-   * 로그아웃 버튼 클릭 시 실행될 함수 (UI 테스트용)
+   * 로그아웃 버튼 클릭 시 실행될 함수
    */
   const handleLogout = (): void => {
-    console.log("Logout action triggered");
+    logout();
     setIsDropdownOpen(false);
+    navigate("/");
+  };
+
+  /**
+   * 로고/CineTrip 영역 클릭 시 홈으로 이동하는 함수
+   */
+  const handleLogoClick = (): void => {
+    navigate("/home");
+  };
+
+  /**
+   * 로그인 버튼 클릭 시 로그인 모달을 여는 함수
+   */
+  const handleLoginClick = (): void => {
+    setIsLoginModalOpen(true);
+  };
+
+  /**
+   * 로그인 모달을 닫는 함수
+   */
+  const handleLoginModalClose = (): void => {
+    setIsLoginModalOpen(false);
   };
 
   // 드롭다운 메뉴 외부를 클릭했을 때 메뉴를 닫는 effect
@@ -83,8 +95,11 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
 
   return (
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
-      {/* 1. 로고 영역 (이동 기능 제거) */}
-      <div className="flex items-center space-x-2">
+      {/* 1. 로고 영역 (홈으로 이동) */}
+      <div 
+        className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+        onClick={handleLogoClick}
+      >
         <img src={logo} alt="CineTrip Logo" className="w-8 h-8 rounded-full" />
         <span className="text-xl font-bold text-gray-800">CineTrip</span>
       </div>
@@ -109,7 +124,7 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
 
       {/* 3. 사용자 정보 및 드롭다운 영역 */}
       <div className="relative" ref={dropdownRef}>
-        {user ? (
+        {isLoggedIn && user ? (
           <>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -131,9 +146,15 @@ const Header = ({ user }: HeaderProps): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <Button variant="outline">로그인</Button>
+          <Button variant="outline" onClick={handleLoginClick}>로그인</Button>
         )}
       </div>
+      
+      {/* 로그인 모달 */}
+      <SocialLoginModal 
+        isOpen={isLoginModalOpen}
+        onClose={handleLoginModalClose}
+      />
     </nav>
   );
 };

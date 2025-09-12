@@ -3,7 +3,7 @@
 /**
  * @file 체크리스트 생성을 위한 모달 컴포넌트
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { FC } from "react";
 import type { NewChecklistDataType } from "../../types/checklist";
 import { CloseIcon } from "./ChecklistPage";
@@ -23,6 +23,17 @@ const CreateChecklistModal: FC<{
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // 모달 스크롤 락
+  useEffect(() => {
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;

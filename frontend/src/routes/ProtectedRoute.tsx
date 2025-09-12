@@ -1,13 +1,12 @@
-import { Outlet } from 'react-router-dom';
-import { useAuthStore } from '../stores/authStore';
+import { Outlet, Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const ProtectedRoute = () => {
-  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
-  const openLoginModal = useAuthStore((state) => state.openLoginModal);
+  const { isLoggedIn } = useAuth();
 
+  // 로그인하지 않은 사용자는 랜딩 페이지로 리다이렉트
   if (!isLoggedIn) {
-    openLoginModal();
-    return null; // 모달을 열고 렌더링을 중단
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

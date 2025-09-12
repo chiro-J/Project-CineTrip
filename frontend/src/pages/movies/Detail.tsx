@@ -3,6 +3,7 @@ import { GridLayout } from '../../components/layout/ImageContainer';
 import { Button } from '../../components/ui/Button';
 import Header from '../../components/layout/Header';
 import Footer from '../../components/layout/Footer';
+import SideNavigationBar from '../../components/layout/SideNavigationBar';
 
 // 테스트를 위한 목업 이미지
 const MOCK_GRID_IMAGES1 = Array.from({ length: 5 }, (_, i) => ({
@@ -12,16 +13,16 @@ const MOCK_GRID_IMAGES1 = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 const MOCK_GRID_IMAGES2 = Array.from({ length: 4 }, (_, i) => ({
-    id: `grid-${i + 1}`,
-    src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=Grid+${i + 1}`,
-    alt: `Grid Image ${i + 1}`,
+    id: `nearby-${i + 1}`,
+    src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=Nearby+${i + 1}`,
+    alt: `Nearby Place ${i + 1}`,
     likes: Math.floor(Math.random() * 2000) + 100, // 각 이미지에 랜덤 좋아요 수 추가
 }));
 
 const MOCK_GRID_IMAGES3 = Array.from({ length: 3 }, (_, i) => ({
-    id: `grid-${i + 1}`,
-    src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=Grid+${i + 1}`,
-    alt: `Grid Image ${i + 1}`,
+    id: `user-${i + 1}`,
+    src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=User+${i + 1}`,
+    alt: `User Photo ${i + 1}`,
     likes: Math.floor(Math.random() * 2000) + 100, // 각 이미지에 랜덤 좋아요 수 추가
 }));
 
@@ -60,6 +61,7 @@ const MovieDetails = () => {
     <>
         <div>
             <Header />
+            <SideNavigationBar />
         </div>
         <div className="text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
             <div className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">

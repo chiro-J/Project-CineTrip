@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Avatar } from "../ui/Avatar";
 import { Search, Star, User, LogOut } from "lucide-react";
 
@@ -22,8 +23,22 @@ const UserDropdown = ({
   onLogout,
   onCloseMenu,
 }: UserDropdownProps): React.ReactElement => {
+  const navigate = useNavigate();
+
   const handleItemClick = (menuName: string) => {
-    console.log(`${menuName} menu clicked`);
+    switch (menuName) {
+      case "Browse":
+        navigate("/home");
+        break;
+      case "Favorites":
+        navigate("/profile/gallery?tab=bookmarks");
+        break;
+      case "My Page":
+        navigate("/profile");
+        break;
+      default:
+        console.log(`${menuName} menu clicked`);
+    }
     onCloseMenu?.();
   };
 

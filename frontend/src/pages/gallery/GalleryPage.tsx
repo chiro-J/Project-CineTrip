@@ -1,9 +1,11 @@
 import Card from "../../components/ui/Card";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import { Button } from "../../components/ui/Button";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
+import PostUploadModal from "../../components/upload/Upload";
 
 type Item = {
   id: string | number;
@@ -152,11 +154,22 @@ const TabContent: React.FC<TabContentProps> = ({
 const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   isOwner = true, // 기본값을 true로 설정하여 본인 프로필로 간주합니다.
 }) => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"photos" | "movies" | "bookmarks">(
     "photos"
   );
 
+  // URL 파라미터에서 tab 값을 읽어서 activeTab 설정
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam && ["photos", "movies", "bookmarks"].includes(tabParam)) {
+      setActiveTab(tabParam as "photos" | "movies" | "bookmarks");
+    }
+  }, [searchParams]);
+
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const handleItemClick = (item: Item) => {
     setSelectedItem(item);
@@ -167,11 +180,15 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   };
 
   const handleAddPhotoClick = () => {
-    console.log("Open add photo modal");
+    setIsUploadModalOpen(true);
+  };
+
+  const closeUploadModal = () => {
+    setIsUploadModalOpen(false);
   };
 
   const handleSearchMoviesClick = () => {
-    console.log("영화 검색 페이지로 이동합니다.");
+    navigate("/movies");
   };
 
   const TABS = [
@@ -220,10 +237,10 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
     // 전체 레이아웃을 스크롤 가능하게 만듭니다.
     <div className="w-full h-full bg-gray-50">
       <Header />
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
 
       <div className="p-4 md:p-8">
-        <nav className="sticky z-10 flex w-full mb-8 border-b border-gray-200 top-16 bg-gray-50">
+        <nav className="sticky z-10 flex w-full mt-16 mb-10 border-b border-gray-200 top-24 bg-gray-50">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -240,6 +257,10 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
           {renderContent()}
         </main>
         <PostModal item={selectedItem} onClose={closeModal} />
+        <PostUploadModal
+          isOpen={isUploadModalOpen}
+          onClose={closeUploadModal}
+        />
       </div>
     </div>
   );

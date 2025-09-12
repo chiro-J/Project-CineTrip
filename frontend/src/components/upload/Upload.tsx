@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Camera, MapPin, Upload } from "lucide-react";
 import { Button } from "../ui/Button";
 
-const PostUploadModal = () => {
+interface PostUploadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) => {
   // 모든 상태 변수들을 명확히 정의
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [isOpen, setIsOpen] = useState<boolean>(true);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string>("");
@@ -17,6 +21,17 @@ const PostUploadModal = () => {
   const [description, setDescription] = useState<string>("");
   const [tags, setTags] = useState<string>("");
   const [location, setLocation] = useState<string>("");
+
+  // 모달 스크롤 락
+  useEffect(() => {
+    if (isOpen) {
+      const prevOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = prevOverflow;
+      };
+    }
+  }, [isOpen]);
 
   const steps = [
     { step: 1, label: "유형 선택" },
@@ -51,8 +66,8 @@ const PostUploadModal = () => {
     if (!file) return;
 
     // 파일 확장자 검증
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     const fileExtension = file.name
       .toLowerCase()
       .substring(file.name.lastIndexOf("."));
@@ -61,7 +76,7 @@ const PostUploadModal = () => {
       !allowedTypes.includes(file.type) ||
       !allowedExtensions.includes(fileExtension)
     ) {
-      setUploadError("JPG, PNG, WEBP 파일만 업로드 가능합니다.");
+      setUploadError("JPG, PNG, WEBP, GIF 파일만 업로드 가능합니다.");
       return;
     }
 
@@ -147,13 +162,16 @@ const PostUploadModal = () => {
   };
 
   const closeModal = () => {
-    setIsOpen(false);
+    onClose();
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto bg-gray-400 bg-opacity-30">
+    <div 
+      className="fixed inset-0 z-50 flex items-start justify-center p-4 overflow-y-auto"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}
+    >
       <div
         className={`bg-white rounded-2xl p-5 w-full mx-auto relative transition-all duration-300 my-8 max-h-[calc(100vh-4rem)] overflow-y-auto ${
           currentStep === 3 ? "max-w-5xl" : "max-w-4xl"
@@ -295,7 +313,7 @@ const PostUploadModal = () => {
                       <input
                         type="file"
                         id="image-upload"
-                        accept=".jpg,.jpeg,.png,.webp"
+                        accept=".jpg,.jpeg,.png,.webp,.gif"
                         onChange={handleImageUpload}
                         className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
                       />
@@ -350,7 +368,7 @@ const PostUploadModal = () => {
                                 : "인근 장소 사진 업로드"}
                             </p>
                             <p className="text-sm text-center text-gray-500">
-                              JPG, PNG, WEBP (최대 5MB)
+                              JPG, PNG, WEBP, GIF (최대 5MB)
                             </p>
                           </>
                         )}

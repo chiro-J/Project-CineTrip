@@ -1,7 +1,9 @@
 // 내 프로필 수정 페이지
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../../components/ui/Avatar";
 import { Button } from "../../components/ui/Button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
@@ -58,14 +60,39 @@ const sampleUserData: UserData = {
 };
 
 const ProfileEditPage = () => {
-  const [userData, setUserData] = useState<UserData>(sampleUserData);
+  const navigate = useNavigate();
+  const { user, login } = useAuth();
   const [isEditingName, setIsEditingName] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
-  const [tempName, setTempName] = useState(userData.name);
-  const [tempEmail, setTempEmail] = useState(userData.email);
+  const [tempName, setTempName] = useState(user?.username || "");
+  const [tempEmail, setTempEmail] = useState(user?.email || "");
+  const [profileImage, setProfileImage] = useState<string | null>(user?.avatarUrl || null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 현재 사용자 정보로 초기값 설정
+  useEffect(() => {
+    if (user) {
+      setTempName(user.username);
+      setTempEmail(user.email);
+      setProfileImage(user.avatarUrl);
+    }
+  }, [user]);
 
   // 파일 input ref
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // 허용되는 이미지 확장자 및 MIME 타입
+  const ALLOWED_IMAGE_TYPES = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/gif",
+  ];
+
+  const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+  const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
   // 이미지 리사이징 함수
   const resizeImage = (file: File, maxSize: number = 200): Promise<string> => {
@@ -103,29 +130,70 @@ const ProfileEditPage = () => {
     });
   };
 
+  // 파일 유효성 검증 함수
+  const validateImageFile = (
+    file: File
+  ): { isValid: boolean; errorMessage?: string } => {
+    // 파일 크기 검사
+    if (file.size > MAX_FILE_SIZE) {
+      return {
+        isValid: false,
+        errorMessage: "파일 크기는 10MB 이하여야 합니다.",
+      };
+    }
+
+    // MIME 타입 검사
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      return {
+        isValid: false,
+        errorMessage: `지원되는 이미지 형식은 ${ALLOWED_EXTENSIONS.join(", ")} 입니다.`,
+      };
+    }
+
+    // 파일 확장자 검사 (이중 검증)
+    const fileName = file.name.toLowerCase();
+    const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) =>
+      fileName.endsWith(ext.toLowerCase())
+    );
+
+    if (!hasValidExtension) {
+      return {
+        isValid: false,
+        errorMessage: `지원되는 이미지 형식은 ${ALLOWED_EXTENSIONS.join(", ")} 입니다.`,
+      };
+    }
+
+    return { isValid: true };
+  };
+
   // 파일 선택 핸들러
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
-    if (file) {
-      // 이미지 파일인지 확인
-      if (file.type.startsWith("image/")) {
-        try {
-          const resizedImageUrl = await resizeImage(file);
-          setUserData((prev: UserData) => ({
-            ...prev,
-            profileImage: resizedImageUrl,
-          }));
-          console.log("프로필 사진 변경 완료");
-        } catch (error) {
-          console.error("이미지 처리 중 오류:", error);
-          alert("이미지 처리 중 오류가 발생했습니다.");
-        }
-      } else {
-        alert("이미지 파일만 업로드 가능합니다.");
-      }
+    if (!file) return;
+
+    // 파일 유효성 검증
+    const validation = validateImageFile(file);
+    if (!validation.isValid) {
+      alert(validation.errorMessage);
+      event.target.value = "";
+      return;
     }
+
+    setIsProcessingImage(true);
+
+    try {
+      const resizedImageUrl = await resizeImage(file);
+      setProfileImage(resizedImageUrl);
+      console.log("프로필 사진 변경 완료");
+    } catch (error) {
+      console.error("이미지 처리 중 오류:", error);
+      alert("이미지 처리 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+
     // input 값 초기화 (같은 파일 재선택 가능하도록)
     event.target.value = "";
   };
@@ -137,22 +205,15 @@ const ProfileEditPage = () => {
 
   // 프로필 사진 제거 (기본 아바타로 되돌리기)
   const handlePhotoRemove = () => {
-    setUserData((prev: UserData) => ({
-      ...prev,
-      profileImage: null,
-    }));
+    setProfileImage(null);
     console.log("프로필 사진을 기본 아바타로 변경");
   };
 
   // 이름 편집 핸들러
   const handleNameEdit = () => {
     if (isEditingName) {
-      setUserData((prev: UserData) => ({
-        ...prev,
-        name: tempName,
-      }));
       setIsEditingName(false);
-      console.log("이름 저장:", tempName);
+      console.log("이름 편집 완료:", tempName);
     } else {
       setIsEditingName(true);
     }
@@ -161,12 +222,8 @@ const ProfileEditPage = () => {
   // 이메일 편집 핸들러
   const handleEmailEdit = () => {
     if (isEditingEmail) {
-      setUserData((prev: UserData) => ({
-        ...prev,
-        email: tempEmail,
-      }));
       setIsEditingEmail(false);
-      console.log("이메일 저장:", tempEmail);
+      console.log("이메일 편집 완료:", tempEmail);
     } else {
       setIsEditingEmail(true);
     }
@@ -175,37 +232,73 @@ const ProfileEditPage = () => {
   // 편집 취소 핸들러
   const handleCancelEdit = (type: "name" | "email") => {
     if (type === "name") {
-      setTempName(userData.name);
+      setTempName(user?.username || "");
       setIsEditingName(false);
     } else if (type === "email") {
-      setTempEmail(userData.email);
+      setTempEmail(user?.email || "");
       setIsEditingEmail(false);
     }
   };
 
-  // 소셜 계정 연결 해제 핸들러
-  const handleDisconnectAccount = (accountId: number) => {
-    console.log("연결 해제:", accountId);
-    setUserData((prev: UserData) => ({
-      ...prev,
-      connectedAccounts: prev.connectedAccounts.filter(
-        (account) => account.id !== accountId
-      ),
-    }));
+  // 전체 저장 핸들러
+  const handleSaveAll = async () => {
+    setIsSaving(true);
+
+    try {
+      // AuthContext의 user 정보 업데이트
+      if (user) {
+        const updatedUser = {
+          ...user,
+          username: tempName,
+          email: tempEmail,
+          avatarUrl: profileImage || user.avatarUrl,
+        };
+        login(updatedUser);
+      }
+
+      // 저장 시뮬레이션 (실제로는 API 호출)
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      console.log("프로필 저장 완료:", { name: tempName, email: tempEmail, avatar: profileImage });
+
+      // /profile 페이지로 이동
+      navigate("/profile");
+    } catch (error) {
+      console.error("저장 중 오류:", error);
+      alert("저장 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
     <>
       <Header />
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
       <div className="p-8 mt-12 bg-gray-50">
         <div style={{ width: "100%", maxWidth: "1000px", margin: "0 auto" }}>
-          <h1
-            className="mb-8 text-3xl font-bold text-gray-900"
-            style={{ textAlign: "left" }}
-          >
-            프로필
-          </h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">프로필</h1>
+            <div className="flex gap-4">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => navigate("/profile")}
+                disabled={isSaving}
+              >
+                취소
+              </Button>
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={handleSaveAll}
+                loading={isSaving}
+                className="min-w-[120px]"
+              >
+                {isSaving ? "저장 중..." : "저장"}
+              </Button>
+            </div>
+          </div>
 
           <div className="bg-white rounded-lg shadow-sm">
             {/* 프로필 사진 섹션 */}
@@ -220,7 +313,7 @@ const ProfileEditPage = () => {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept={ALLOWED_IMAGE_TYPES.join(",")}
                 onChange={handleFileChange}
                 style={{ display: "none" }}
               />
@@ -229,17 +322,32 @@ const ProfileEditPage = () => {
                   <tr>
                     <td
                       style={{
-                        width: "70%",
+                        width: "30%",
                         verticalAlign: "middle",
                         textAlign: "left",
                       }}
                     >
                       <Avatar
-                        src={userData.profileImage || undefined}
+                        src={profileImage || undefined}
                         size="xl"
-                        fallback={userData.fallback}
+                        fallback={user?.username?.charAt(0).toUpperCase()}
                         className="bg-blue-500"
                       />
+                    </td>
+                    <td
+                      style={{
+                        width: "40%",
+                        verticalAlign: "middle",
+                        textAlign: "left",
+                        paddingLeft: "20px",
+                      }}
+                    >
+                      {/* 이미지 처리 안내 문구 */}
+                      <div className="text-sm text-gray-600">
+                        <p>• 지원 형식: JPG, PNG, WebP, GIF (최대 10MB)</p>
+                        <p>• 이미지는 자동으로 200×200 픽셀로 조정됩니다</p>
+                        <p>• 정사각형으로 자동 크롭되어 최적화됩니다</p>
+                      </div>
                     </td>
                     <td
                       style={{
@@ -266,8 +374,9 @@ const ProfileEditPage = () => {
                           variant="outline"
                           size="md"
                           onClick={handlePhotoChange}
+                          disabled={isProcessingImage}
                         >
-                          사진 변경
+                          {isProcessingImage ? "처리 중..." : "사진 변경"}
                         </Button>
                       </div>
                     </td>
@@ -305,7 +414,7 @@ const ProfileEditPage = () => {
                         />
                       ) : (
                         <span className="text-lg text-gray-700">
-                          {userData.name}
+                          {tempName}
                         </span>
                       )}
                     </td>
@@ -381,7 +490,7 @@ const ProfileEditPage = () => {
                         />
                       ) : (
                         <span className="text-lg text-gray-700">
-                          {userData.email}
+                          {tempEmail}
                         </span>
                       )}
                     </td>
@@ -436,9 +545,9 @@ const ProfileEditPage = () => {
               >
                 연결된 소셜 계정
               </h2>
-              {userData.connectedAccounts.length > 0 ? (
+              {sampleUserData.connectedAccounts.length > 0 ? (
                 <div className="space-y-4">
-                  {userData.connectedAccounts.map((account) => (
+                  {sampleUserData.connectedAccounts.map((account) => (
                     <div
                       key={account.id}
                       className="p-6 border border-gray-200 rounded-lg"
@@ -483,9 +592,7 @@ const ProfileEditPage = () => {
                               <Button
                                 variant="outline"
                                 size="md"
-                                onClick={() =>
-                                  handleDisconnectAccount(account.id)
-                                }
+                                onClick={() => console.log("연결 해제:", account.id)}
                               >
                                 연결 해제
                               </Button>
