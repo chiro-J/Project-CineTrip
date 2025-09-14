@@ -1,19 +1,18 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from "react";
 import { InfiniteMasonryLayout } from "../../components/layout/ImageContainer";
-import Header from '../../components/layout/Header';
-import SideNavigationBar from '../../components/layout/SideNavigationBar';
-import SocialLoginModal from '../../components/auth/Login';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
-
+import Header from "../../components/layout/Header";
+import SideNavigationBar from "../../components/layout/SideNavigationBar";
+import SocialLoginModal from "../../components/auth/Login";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
 
 type ImageItem = {
-    id: string | number;
-    src: string;
-    alt?: string;
-    likes?: number;
+  id: string | number;
+  src: string;
+  alt?: string;
+  likes?: number;
 };
 
 /**
@@ -23,22 +22,22 @@ type ImageItem = {
  * @returns {Promise<ImageItem[]>} - 이미지 데이터 배열을 반환하는 프로미스
  */
 const fetchImages = (page: number): Promise<ImageItem[]> => {
-    return new Promise(resolve => {
-        console.log(`Fetching page ${page}...`);
-        setTimeout(() => {
-            const newImages = Array.from({ length: 20 }, (_, i) => {
-                const id = page * 20 + i;
-                const height = Math.floor(Math.random() * 600) + 200; // 200 to 800px
-                return {
-                    id: `m-${id}`,
-                    src: `https://placehold.co/600x${height}/gray/white?text=Image+${id}`,
-                    alt: `Image ${id}`,
-                    likes: Math.floor(Math.random() * 2000) + 100
-                };
-            });
-            resolve(newImages);
-        }, 500); // 1초 딜레이 시뮬레이션
-    });
+  return new Promise((resolve) => {
+    console.log(`Fetching page ${page}...`);
+    setTimeout(() => {
+      const newImages = Array.from({ length: 5 }, (_, i) => {
+        const id = page * 5 + i;
+        const height = Math.floor(Math.random() * 600) + 200; // 200 to 800px
+        return {
+          id: `m-${id}`,
+          src: `https://placehold.co/600x${height}/gray/white?text=Image+${id}`,
+          alt: `Image ${id}`,
+          likes: Math.floor(Math.random() * 2000) + 100,
+        };
+      });
+      resolve(newImages);
+    }, 1000); // 1초 딜레이 시뮬레이션
+  });
 };
 
 /**
@@ -76,38 +75,44 @@ const Home = () => {
         }
       };
 
-      window.addEventListener('scroll', handleScroll);
-      return () => window.removeEventListener('scroll', handleScroll);
+      window.addEventListener("scroll", handleScroll);
+      return () => window.removeEventListener("scroll", handleScroll);
     }
   }, [isLoggedIn, hasTriggeredModal]);
 
   // 이미지 데이터를 불러오는 함수
   const loadMoreImages = async () => {
     if (loading || !hasMore) return;
-    
+
     // 비로그인 사용자이고 로그인 모달이 표시되었으면 로딩 중지
     if (!isLoggedIn && showLoginModal) return;
-    
+
     setLoading(true);
     const newImages = await fetchImages(page);
     if (newImages.length === 0) {
-        setHasMore(false); // 더 이상 데이터가 없으면 hasMore를 false로 설정
+      setHasMore(false); // 더 이상 데이터가 없으면 hasMore를 false로 설정
     } else {
-        setImages(prevImages => [...prevImages, ...newImages]);
-        setPage(prevPage => prevPage + 1);
+      setImages((prevImages) => [...prevImages, ...newImages]);
+      setPage((prevPage) => prevPage + 1);
     }
     setLoading(false);
   };
 
   // Intersection Observer 설정
   useEffect(() => {
+    // 비로그인 상태에서 모달이 이미 트리거되었으면 observer를 아예 설정하지 않음
+    if (!isLoggedIn && hasTriggeredModal) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
+        // 로그인 모달이 표시되었거나 비로그인 상태에서 모달이 트리거되었으면 로딩 중지
+        if (!isLoggedIn && showLoginModal) return;
+
         if (entries[0] && entries[0].isIntersecting) {
           loadMoreImages();
         }
       },
-      { rootMargin: '1500px' } // 뷰포트 경계를 500px 확장, 스크롤이 끝나기 전 로딩
+      { rootMargin: "1500px" } // 뷰포트 경계를 500px 확장, 스크롤이 끝나기 전 로딩
     );
 
     if (observerTarget.current) {
@@ -119,36 +124,36 @@ const Home = () => {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [loading, hasMore, showLoginModal]); // loading, hasMore, showLoginModal이 바뀔 때 observer를 재설정
+  }, [loading, hasMore, isLoggedIn]); // hasTriggeredModal과 showLoginModal을 dependency에서 제거
 
   // 스크롤 위치를 감지하여 버튼 표시 여부를 결정하는 Effect
   useEffect(() => {
     const handleScroll = () => {
-        if (window.scrollY > 300) {
-            setShowScrollButton(true);
-        } else {
-            setShowScrollButton(false);
-        }
+      if (window.scrollY > 300) {
+        setShowScrollButton(true);
+      } else {
+        setShowScrollButton(false);
+      }
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
     return () => {
-        window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
   // 최상단 이동 함수
   const scrollToTop = () => {
     window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
+      top: 0,
+      behavior: "smooth",
     });
   };
 
   // 로그인 모달 닫기 핸들러 - Landing 페이지로 이동
   const handleLoginModalClose = () => {
     if (!isLoggedIn) {
-      navigate('/');
+      navigate("/");
     } else {
       setShowLoginModal(false);
     }
@@ -156,38 +161,52 @@ const Home = () => {
 
   return (
     <>
-        <SideNavigationBar />
-        <div className="mb-6 text-[#111827]" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
-            <nav>
-                <Header />
-            </nav>
-        </div>
-        <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
-            <InfiniteMasonryLayout images={images} />
-            {/* 스크롤 감지를 위한 타겟 요소 */}
-            <div ref={observerTarget} style={{ height: "20px" }} />
-            {/* 로딩 중일 때와 더 이상 데이터가 없을 때 메시지 표시 */}
-            {loading && <p className="text-center">Loading more images...</p>}
-            {!hasMore && <p className="text-center">All images loaded.</p>}
-        </main>
-        {/* 스크롤 최상단 이동 버튼 */}
-        {showScrollButton && (
-            <button 
-                onClick={scrollToTop}
-                className="fixed z-50 flex items-center justify-center text-gray-700 transition-colors duration-300 bg-white border border-gray-200 rounded-full shadow-lg bottom-8 right-8 w-18 h-18 hover:bg-gray-100"
-                aria-label="Scroll to top"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-                </svg>
-            </button>
-        )}
-        
-        {/* 로그인 모달 */}
-        <SocialLoginModal 
-          isOpen={showLoginModal} 
-          onClose={handleLoginModalClose} 
-        />
+      <SideNavigationBar />
+      <div
+        className="mb-6 text-[#111827]"
+        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
+      >
+        <nav>
+          <Header />
+        </nav>
+      </div>
+      <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
+        <InfiniteMasonryLayout images={images} />
+        {/* 스크롤 감지를 위한 타겟 요소 */}
+        <div ref={observerTarget} style={{ height: "20px" }} />
+        {/* 로딩 중일 때와 더 이상 데이터가 없을 때 메시지 표시 */}
+        {loading && <p className="text-center">Loading more images...</p>}
+        {!hasMore && <p className="text-center">All images loaded.</p>}
+      </main>
+      {/* 스크롤 최상단 이동 버튼 */}
+      {showScrollButton && (
+        <button
+          onClick={scrollToTop}
+          className="fixed z-50 flex items-center justify-center text-gray-700 transition-colors duration-300 bg-white border border-gray-200 rounded-full shadow-lg bottom-8 right-8 w-18 h-18 hover:bg-gray-100"
+          aria-label="Scroll to top"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-6 h-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 15l7-7 7 7"
+            />
+          </svg>
+        </button>
+      )}
+
+      {/* 로그인 모달 */}
+      <SocialLoginModal
+        isOpen={showLoginModal}
+        onClose={handleLoginModalClose}
+      />
     </>
   );
 };

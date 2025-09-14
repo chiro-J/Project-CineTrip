@@ -17,9 +17,6 @@ interface UserProfile {
   avatarUrl: string;
 }
 
-interface HeaderProps {
-  user?: UserProfile;
-}
 
 interface LandingHeaderProps {
   user?: UserProfile;
@@ -223,6 +220,9 @@ export const Landing = () => {
   // Effect to set up and clean up the wheel event listener
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
+      // 로그인 모달이 열려있으면 스크롤 이벤트를 무시
+      if (isLoginModalOpen) return;
+
       e.preventDefault();
       if (isAnimatingRef.current) return;
 
@@ -253,14 +253,20 @@ export const Landing = () => {
         (viewport as HTMLDivElement).removeEventListener("wheel", handleWheel);
       }
     };
-  }, [totalSlides]);
+  }, [totalSlides, isLoginModalOpen]);
 
   const handleLoginClick = () => {
     setIsLoginModalOpen(true);
+    // 모달이 열릴 때 애니메이션 상태를 고정
+    isAnimatingRef.current = true;
   };
 
   const handleLoginModalClose = () => {
     setIsLoginModalOpen(false);
+    // 모달이 닫힐 때 애니메이션 상태를 리셋
+    setTimeout(() => {
+      isAnimatingRef.current = false;
+    }, 100);
   };
 
   return (

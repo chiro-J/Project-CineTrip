@@ -7,6 +7,7 @@ import { ChevronUp } from "lucide-react";
 import PostModal from "../../components/post/PostModal";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import Footer from "../../components/layout/Footer";
+import { useSearchParams } from "react-router-dom";
 
 // --- 타입 정의 ---
 
@@ -180,7 +181,8 @@ const UserResults = () => {
 // --- 메인 통합 검색 페이지 컴포넌트 ---
 
 const SearchPage = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [activeTab, setActiveTab] = useState("movie");
   const [showScrollButton, setShowScrollButton] = useState(false);
 
@@ -198,6 +200,13 @@ const SearchPage = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const queryParam = searchParams.get("q");
+    if (queryParam) {
+      setSearchQuery(queryParam);
+    }
+  }, [searchParams]);
 
   const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -217,12 +226,18 @@ const SearchPage = () => {
   return (
     <div className="px-4 mx-auto pt-18 max-w-7xl sm:px-6 lg:px-8">
       <Header />
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
 
       <div className="mb-16 text-center">
-        <p className="mt-6 text-lg text-gray-600">
-          영화, 사용자, 게시물을 한 곳에서 검색하세요.
-        </p>
+        {searchQuery ? (
+          <p className="mt-6 text-lg text-gray-600">
+            "<span className="font-semibold">{searchQuery}</span>" 검색 결과
+          </p>
+        ) : (
+          <p className="mt-6 text-lg text-gray-600">
+            영화, 사용자, 게시물을 한 곳에서 검색하세요.
+          </p>
+        )}
         <div className="flex max-w-2xl gap-2 mx-auto mt-10">
           <input
             type="text"

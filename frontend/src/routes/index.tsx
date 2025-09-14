@@ -7,7 +7,7 @@ import Profile from "../pages/user/Profile";
 import ProfileEditPage from "../pages/user/ProfileEdit";
 import UserProfilePage from "../pages/user/MyProfile";
 import GalleryPage from "../pages/gallery/GalleryPage";
-import MovieSearchMain from "../pages/movies";
+import SearchResultPage from "../pages/search/SearchResultPage";
 import MovieDetails from "../pages/movies/Detail";
 
 // 조건부 라우팅 래퍼
@@ -31,7 +31,7 @@ function AppRoutes() {
           <Route path="/profile" element={<UserProfilePage />} />
           <Route path="/user/:userId" element={<Profile />} />
           <Route path="/user/:userId/gallery" element={<GalleryPage />} />
-          <Route path="/movies" element={<MovieSearchMain />} />
+          <Route path="/search" element={<SearchResultPage />} />
           <Route path="/movies/:movieId" element={<MovieDetails />} />
           {/* <Route path="/search?q=:query" element={<Search />} 서치 페이지가 아직 없음/> */}
         </Route>
