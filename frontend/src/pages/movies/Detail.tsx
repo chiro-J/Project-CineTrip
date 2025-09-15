@@ -5,8 +5,12 @@ import Header from "../../components/layout/Header";
 import Footer from "../../components/layout/Footer";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { type Item } from "../../types/common";
+import { tmdbService } from "../../services/tmdbService";
+import { type Movie, getImageUrl } from "../../types/movie";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 테스트를 위한 목업 이미지
 const MOCK_GRID_IMAGES1 = Array.from({ length: 5 }, (_, i) => ({
@@ -31,42 +35,68 @@ const MOCK_GRID_IMAGES3 = Array.from({ length: 3 }, (_, i) => ({
 
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
 
-// 별점 표시 컴포넌트 플레이스홀더
+// 별점 표시 컴포넌트
 const StarRating = ({ rating }: { rating: number }) => {
-  // 로컬 별점 이미지를 사용한다고 가정합니다.
-  // 실제 구현에서는 점수에 따라 동적으로 별 이미지를 렌더링해야 합니다.
-  const starImageBaseUrl = "./images/"; // 로컬 이미지 경로 (가정)
+  // 10점 만점을 5점 만점으로 변환
+  const normalizedRating = rating / 2;
+
+  // 별 개수 계산 (0-5)
+  const fullStars = Math.floor(normalizedRating);
+  const hasHalfStar = normalizedRating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
   return (
     <div className="flex items-center mt-2">
       <div className="inline-flex items-center gap-[2px]">
-        {/* 예시: 3.6점을 표현 */}
-        <img
-          src={`${starImageBaseUrl}star_full.svg`}
-          alt="Full Star"
-          className="w-6 h-6"
-        />
-        <img
-          src={`${starImageBaseUrl}star_full.svg`}
-          alt="Full Star"
-          className="w-6 h-6"
-        />
-        <img
-          src={`${starImageBaseUrl}star_full.svg`}
-          alt="Full Star"
-          className="w-6 h-6"
-        />
-        <img
-          src={`${starImageBaseUrl}star_half.svg`}
-          alt="Half Star"
-          className="w-6 h-6"
-        />
-        <img
-          src={`${starImageBaseUrl}star_empty.svg`}
-          alt="Empty Star"
-          className="w-6 h-6"
-        />
+        {/* 완전한 별들 */}
+        {Array.from({ length: fullStars }, (_, i) => (
+          <svg
+            key={`full-${i}`}
+            className="w-6 h-6 text-yellow-400"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+
+        {/* 절반 별 */}
+        {hasHalfStar && (
+          <div className="relative w-6 h-6">
+            <svg
+              className="w-6 h-6 text-gray-300"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+            </svg>
+            <div className="absolute inset-0 w-1/2 overflow-hidden">
+              <svg
+                className="w-6 h-6 text-yellow-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+              </svg>
+            </div>
+          </div>
+        )}
+
+        {/* 빈 별들 */}
+        {Array.from({ length: emptyStars }, (_, i) => (
+          <svg
+            key={`empty-${i}`}
+            className="w-6 h-6 text-gray-300"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
       </div>
-      <span className="ml-3 text-xl font-bold text-gray-800">{rating}</span>
+      <span className="ml-3 text-xl font-bold text-gray-800">
+        {(rating / 2).toFixed(1)}
+      </span>
     </div>
   );
 };
@@ -79,7 +109,45 @@ const handleClick = () => {
  * 영화 상세 정보 페이지 컴포넌트
  */
 const MovieDetails = () => {
+  const { movieId } = useParams<{ movieId: string }>();
+  const navigate = useNavigate();
+  const { toggleBookmark, isBookmarked } = useAuth();
   const [selectedImage, setSelectedImage] = useState<Item | null>(null);
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 북마크 토글 핸들러
+  const handleBookmarkToggle = () => {
+    if (movieId) {
+      toggleBookmark(parseInt(movieId));
+    }
+  };
+
+  // 영화 데이터 로드
+  useEffect(() => {
+    const loadMovieDetails = async () => {
+      if (!movieId) {
+        setError("영화 ID가 없습니다.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const movieData = await tmdbService.getMovieDetails(parseInt(movieId));
+        setMovie(movieData);
+      } catch (err) {
+        setError("영화 정보를 불러오는데 실패했습니다.");
+        console.error("Error loading movie details:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMovieDetails();
+  }, [movieId]);
 
   // '유저 사진' 그리드에서 이미지를 클릭했을 때 실행될 핸들러 함수를 추가합니다.
   const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -97,6 +165,36 @@ const MovieDetails = () => {
       }
     }
   };
+
+  // 로딩 상태
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <SideNavigationBar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-lg text-gray-600">
+            영화 정보를 불러오는 중...
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 에러 상태
+  if (error || !movie) {
+    return (
+      <>
+        <Header />
+        <SideNavigationBar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-lg text-red-600">
+            {error || "영화를 찾을 수 없습니다."}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -118,32 +216,39 @@ const MovieDetails = () => {
               {/* 영화 포스터 (Card 컴포넌트 위치) */}
               <div className="col-span-1">
                 <Card
-                  src="https://placehold.co/400x500/E0E0E0/333333?text=Movie+Poster"
-                  alt="영화 포스터"
+                  src={getImageUrl(movie.poster_path, "w500")}
+                  alt={movie.title}
                 />
               </div>
 
               {/* 영화 상세 정보 */}
               <div className="col-span-2 space-y-6">
                 <div className="mb-8">
-                  <h3 className="mb-8 text-3xl font-bold">
-                    스파이더맨: 파 프롬 홈
-                  </h3>
-                  <StarRating rating={3.6} />
+                  <h3 className="mb-8 text-3xl font-bold">{movie.title}</h3>
+                  <StarRating rating={movie.vote_average} />
                 </div>
                 <div className="mb-8 text-left">
                   <h4 className="text-lg font-semibold">줄거리</h4>
                   <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                    '엔드게임' 이후 변화된 세상, 스파이더맨 '피터 파커'는 학교
-                    친구들과 유럽 여행을 떠나게 된다. 그런 그의 앞에 '닉 퓨리'가
-                    나타나 도움을 요청하고, 정체불명의 조력자 '미스테리오'까지
-                    합류하게 되면서 전 세계를 위협하는 새로운 빌런 '엘리멘탈
-                    크리쳐스'와 맞서야만 하는 상황에 놓이게 되는데…
+                    {movie.overview || "줄거리 정보가 없습니다."}
                   </p>
                 </div>
                 <div className="text-left">
                   <h4 className="text-lg font-semibold">개봉일자</h4>
-                  <p className="mt-2 text-sm text-gray-600">2019년 7월 2일</p>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {movie.release_date
+                      ? new Date(movie.release_date).toLocaleDateString("ko-KR")
+                      : "개봉일 정보가 없습니다."}
+                  </p>
+                </div>
+                <div className="text-left">
+                  <Button
+                    variant={isBookmarked(parseInt(movieId || "0")) ? "secondary" : "primary"}
+                    onClick={handleBookmarkToggle}
+                    className={`mt-4 ${isBookmarked(parseInt(movieId || "0")) ? "bg-gray-500 hover:bg-gray-600" : ""}`}
+                  >
+                    {isBookmarked(parseInt(movieId || "0")) ? "✓ 북마크됨" : "+ 북마크"}
+                  </Button>
                 </div>
               </div>
             </div>

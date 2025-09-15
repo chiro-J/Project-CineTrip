@@ -7,24 +7,8 @@ import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
 import PostUploadModal from "../../components/upload/Upload";
 import { type Item } from "../../types/common";
-
-// 더미데이터
-const mockPhotos: Item[] = Array.from({ length: 15 }, (_, index) => ({
-  id: `photo-${index + 1}`,
-  src: `https://picsum.photos/seed/p${index + 1}/400/400`,
-  alt: `Sample photo ${index + 1}`,
-  likes: Math.floor(Math.random() * 200) + 1,
-}));
-
-// 더미데이터
-const mockMovies: Item[] = Array.from({ length: 8 }, (_, index) => ({
-  id: `movie-${index + 1}`,
-  src: `https://picsum.photos/seed/m${index + 1}/400/600`, // 영화 포스터 비율
-  alt: `Sample movie poster ${index + 1}`,
-}));
-
-// 더미데이터
-const mockBookmarks: Item[] = [];
+import { useAuth } from "../../contexts/AuthContext";
+import { getImageUrl } from "../../types/movie";
 
 /**
  * 데이터가 없을 때 표시할 UI 컴포넌트
@@ -150,6 +134,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
 }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { userPhotosForGallery, userMoviesForGallery, userBookmarksForGallery } = useAuth();
   const [activeTab, setActiveTab] = useState<"photos" | "movies" | "bookmarks">(
     "photos"
   );
@@ -166,7 +151,13 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   const handleItemClick = (item: Item) => {
-    setSelectedItem(item);
+    // movieId가 있으면 영화 디테일 페이지로 이동
+    if ((item as any).movieId) {
+      navigate(`/movies/${(item as any).movieId}`);
+    } else {
+      // 사진인 경우 모달 열기
+      setSelectedItem(item);
+    }
   };
 
   const closeModal = () => {
@@ -196,7 +187,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
       case "photos":
         return (
           <TabContent
-            items={mockPhotos}
+            items={userPhotosForGallery}
             emptyMessage=""
             isPhotoTab={true}
             onAddClick={handleAddPhotoClick}
@@ -207,18 +198,20 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
       case "movies":
         return (
           <TabContent
-            items={mockMovies}
+            items={userMoviesForGallery}
             emptyMessage="감상한 영화가 없습니다."
             isOwner={isOwner}
+            onItemClick={handleItemClick}
           />
         );
       case "bookmarks":
         return (
           <TabContent
-            items={mockBookmarks}
+            items={userBookmarksForGallery}
             emptyMessage="북마크한 영화가 없습니다."
             onSearchMoviesClick={handleSearchMoviesClick}
             isOwner={isOwner}
+            onItemClick={handleItemClick}
           />
         );
       default:
