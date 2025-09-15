@@ -7,6 +7,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PostModal from "../../components/post/PostModal";
 
+
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
 
 type ImageItem = {
@@ -26,8 +27,10 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
   return new Promise((resolve) => {
     console.log(`Fetching page ${page}...`);
     setTimeout(() => {
-      const newImages = Array.from({ length: 20 }, (_, i) => {
-        const id = page * 20 + i;
+
+      const newImages = Array.from({ length: 5 }, (_, i) => {
+        const id = page * 5 + i;
+
         const height = Math.floor(Math.random() * 600) + 200; // 200 to 800px
         return {
           id: `m-${id}`,
@@ -37,7 +40,7 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
         };
       });
       resolve(newImages);
-    }, 500); // 1초 딜레이 시뮬레이션
+    }, 1000); // 1초 딜레이 시뮬레이션
   });
 };
 
@@ -101,8 +104,14 @@ const Home = () => {
 
   // Intersection Observer 설정
   useEffect(() => {
+    // 비로그인 상태에서 모달이 이미 트리거되었으면 observer를 아예 설정하지 않음
+    if (!isLoggedIn && hasTriggeredModal) return;
+
     const observer = new IntersectionObserver(
       (entries) => {
+        // 로그인 모달이 표시되었거나 비로그인 상태에서 모달이 트리거되었으면 로딩 중지
+        if (!isLoggedIn && showLoginModal) return;
+
         if (entries[0] && entries[0].isIntersecting) {
           loadMoreImages();
         }
@@ -119,7 +128,7 @@ const Home = () => {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [loading, hasMore, showLoginModal]); // loading, hasMore, showLoginModal이 바뀔 때 observer를 재설정
+  }, [loading, hasMore, isLoggedIn]); // hasTriggeredModal과 showLoginModal을 dependency에서 제거
 
   // 스크롤 위치를 감지하여 버튼 표시 여부를 결정하는 Effect
   useEffect(() => {
@@ -183,6 +192,7 @@ const Home = () => {
           <Header />
         </nav>
       </div>
+      
       <div onClick={handleGridClick}>
         <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
           <InfiniteMasonryLayout images={images} />
@@ -193,6 +203,7 @@ const Home = () => {
           {!hasMore && <p className="text-center">All images loaded.</p>}
         </main>
       </div>
+
       {/* 스크롤 최상단 이동 버튼 */}
       {showScrollButton && (
         <button
@@ -216,7 +227,9 @@ const Home = () => {
           </svg>
         </button>
       )}
+
       {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
+
 
       {/* 로그인 모달 */}
       <SocialLoginModal

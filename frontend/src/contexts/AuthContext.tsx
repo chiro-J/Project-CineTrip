@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 
 // 사용자 프로필 정보 인터페이스
 export interface UserProfile {
@@ -19,14 +19,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Admin 사용자 데이터 (개발용)
-const ADMIN_USER: UserProfile = {
-  id: 'admin-001',
-  username: 'Admin',
-  email: 'admin@cinetrip.com',
-  avatarUrl: 'https://picsum.photos/seed/admin/40/40',
-  role: 'admin'
-};
 
 interface AuthProviderProps {
   children: ReactNode;

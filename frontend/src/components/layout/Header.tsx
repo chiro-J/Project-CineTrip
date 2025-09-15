@@ -25,14 +25,12 @@ const Header = (): React.ReactElement => {
 
   /**
    * 검색 아이콘 클릭 또는 Enter 키 입력 시 실행될 함수
-   * 실제 검색 로직(예: API 호출)이 여기서 실행됩니다.
+   * 검색어를 URL 파라미터로 전달하여 검색 결과 페이지로 이동합니다.
    */
   const handleSearch = (): void => {
     // 검색어가 비어있지 않을 때만 실행
     if (searchQuery.trim() !== "") {
-      console.log(`Searching for: ${searchQuery}`);
-      // 이 곳에서 검색 결과를 가져와 상태를 업데이트하는 로직을 추가하여
-      // 컴포넌트 리렌더링을 유도할 수 있습니다.
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
