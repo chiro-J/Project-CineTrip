@@ -7,7 +7,7 @@ import { GridLayout } from "../../components/layout/ImageContainer";
 import ChecklistPage from "../../components/checklist/ChecklistPage";
 import { Avatar } from "../../components/ui/Avatar";
 import { useNavigate } from "react-router-dom";
-import AuthContext, { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
 import { useState } from "react";

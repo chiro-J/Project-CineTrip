@@ -54,7 +54,7 @@ const SideNavigationBar = ({
 }: SideNavigationBarProps): React.ReactElement | null => {
   const { isLoggedIn } = useAuth();
   const location = useLocation();
-  
+
   // 로그인 상태가 아니라면 컴포넌트를 렌더링하지 않습니다.
   if (!isLoggedIn) {
     return null;
@@ -65,6 +65,7 @@ const SideNavigationBar = ({
   const toggleButtonRef = useRef<HTMLButtonElement>(null);
 
   const fixedNavItems: NavigationItem[] = [
+    { id: "movie-search", label: "영화 검색하기", icon: "🔍" },
     { id: "checklist", label: "여행 체크리스트", icon: "📋" },
     { id: "photos", label: "내 사진 편집", icon: "📷" },
     { id: "movies", label: "감상한 영화", icon: "🍿" },
@@ -74,7 +75,7 @@ const SideNavigationBar = ({
   // 현재 경로에 따라 활성 아이템 결정
   const getActiveItemFromPath = useCallback((): string => {
     const { pathname, search } = location;
-    
+
     if (pathname === "/profile") {
       return "checklist";
     } else if (pathname === "/profile/gallery") {
@@ -83,16 +84,20 @@ const SideNavigationBar = ({
       if (tab === "photos") return "photos";
       if (tab === "movies") return "movies";
       return "photos"; // 기본값
+    } else if (pathname === "/movies") {
+      return "movie-search";
     } else if (pathname.includes("/user/") && pathname.includes("/edit")) {
       return "profile";
     }
-    
+
     // SNB 관련 페이지가 아닌 경우 빈 문자열 반환 (아무것도 선택되지 않음)
     return "";
   }, [location]);
 
   // --- 상태 내부 관리 로직 수정 ---
-  const [internalActiveId, setInternalActiveId] = useState(() => getActiveItemFromPath());
+  const [internalActiveId, setInternalActiveId] = useState(() =>
+    getActiveItemFromPath()
+  );
 
   // 경로가 변경될 때마다 활성 아이템 업데이트
   useEffect(() => {
@@ -118,6 +123,9 @@ const SideNavigationBar = ({
         break;
       case "movies":
         navigate("/profile/gallery?tab=movies");
+        break;
+      case "movie-search":
+        navigate("/movies");
         break;
       case "profile":
         navigate("/user/1/edit"); // 샘플 예시, 실제로는 user/1/edit을 user에 맞게 변경해야 함.
@@ -154,17 +162,17 @@ const SideNavigationBar = ({
   // ESC 키로 닫기
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         handleClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener("keydown", handleKeyDown);
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
 
@@ -182,11 +190,11 @@ const SideNavigationBar = ({
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen]);
 
@@ -205,7 +213,11 @@ const SideNavigationBar = ({
 
   return (
     <>
-      <button ref={toggleButtonRef} onClick={handleToggle} className={buttonClasses}>
+      <button
+        ref={toggleButtonRef}
+        onClick={handleToggle}
+        className={buttonClasses}
+      >
         {isOpen ? (
           <span className="flex items-center justify-center w-5 h-5 bg-white rounded-sm shadow">
             <ChevronLeft size={16} color="black" />

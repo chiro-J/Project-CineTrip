@@ -171,7 +171,7 @@ const SearchResultPage = () => {
 
   return (
     <div className="w-full min-h-screen ">
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
       <div className="container p-4 mx-auto sm:p-6 md:p-8">
         <Header />
         <main>
