@@ -9,10 +9,9 @@ import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import Footer from "../../components/layout/Footer";
 import { type Item } from "../../types/common";
 import { useSearchParams } from "react-router-dom";
-
+import { Link } from "react-router-dom";
 
 // --- 타입 정의 ---
-
 type UserProfile = {
   id: number;
   avatarUrl: string;
@@ -21,8 +20,7 @@ type UserProfile = {
   bio: string;
 };
 
-// --- Mock 데이터 및 API 시뮬레이션 ---
-
+// --- Mock 데이터 ---
 const mockUsers: UserProfile[] = [
   {
     id: 1,
@@ -39,12 +37,6 @@ const mockUsers: UserProfile[] = [
     bio: "세상을 사진으로 담아냅니다.",
   },
 ];
-
-const MOCK_MOVIE_IMAGES = Array.from({ length: 10 }, (_, i) => ({
-  id: `movie-${i + 1}`,
-  src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=Movie+${i + 1}`,
-  alt: `Movie Image ${i + 1}`,
-}));
 
 const fetchPosts = (page: number): Promise<Item[]> => {
   return new Promise((resolve) => {
@@ -63,43 +55,11 @@ const fetchPosts = (page: number): Promise<Item[]> => {
   });
 };
 
-// --- 개별 결과 컴포넌트 ---
-
-const MovieResults = () => {
-  const [activeFilter, setActiveFilter] = useState("latest");
-  const filterOptions = [
-    { id: "latest", label: "최신순" },
-    { id: "bookmark", label: "북마크순" },
-  ];
-
-  return (
-    <div>
-      <div className="flex justify-center gap-8 mb-12">
-        {filterOptions.map((option) => (
-          <Button
-            key={option.id}
-            variant={activeFilter === option.id ? "primary" : "secondary"}
-            size="sm"
-            onClick={() => setActiveFilter(option.id)}
-            className="min-w-[100px]"
-          >
-            {option.label}
-          </Button>
-        ))}
-      </div>
-      <GridLayout
-        images={MOCK_MOVIE_IMAGES}
-        className="md:grid-cols-3 lg:grid-cols-4"
-      />
-    </div>
-  );
-};
-
+// --- 결과 컴포넌트들 ---
 const PostResults = () => {
   const [posts, setPosts] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-  // 컴포넌트가 처음 렌더링될 때 한 번만 게시물을 불러옵니다.
   useEffect(() => {
     const getInitialPosts = async () => {
       const initialPosts = await fetchPosts(1);
@@ -110,7 +70,7 @@ const PostResults = () => {
 
   const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    const img = target.closest("img");
+    const img = target.closest("img") as HTMLImageElement | null;
     if (img?.src) {
       const item = posts.find((p) => p.src === img.src);
       if (item) setSelectedItem(item);
@@ -119,10 +79,10 @@ const PostResults = () => {
 
   return (
     <section>
-      <h2 className="pb-3 mb-6 text-2xl font-bold text-gray-800 border-b">
+      <h2 className="pt-4 pb-3 mb-6 text-2xl font-bold text-gray-800 border-b-3">
         게시물
       </h2>
-      <div onClick={handleGridClick}>
+      <div onClick={handleGridClick} className="pt-4">
         <GridLayout images={posts} className="md:grid-cols-3 lg:grid-cols-4" />
       </div>
       {selectedItem && (
@@ -136,7 +96,7 @@ const UserResults = () => {
   const UserCard = ({ user }: { user: UserProfile }) => {
     const [isFollowing, setIsFollowing] = useState(false);
     return (
-      <div className="flex flex-wrap items-center justify-between w-full gap-4 py-4 border-b">
+      <div className="flex flex-wrap items-center justify-between w-full gap-4 py-4">
         <div className="flex items-center gap-4">
           <Avatar size="xl" />
           <div className="text-left">
@@ -158,8 +118,8 @@ const UserResults = () => {
 
   return (
     <>
-      <section className="mb-16 ">
-        <h2 className="pb-3 mb-4 text-2xl font-bold text-gray-800 border-b">
+      <section className="mb-16">
+        <h2 className="pb-3 mb-4 text-2xl font-bold text-gray-800 border-b-3">
           사용자
         </h2>
         <div className="flex flex-col">
@@ -173,21 +133,14 @@ const UserResults = () => {
   );
 };
 
-// --- 메인 통합 검색 페이지 컴포넌트 ---
-
-const SearchPage = () => {
+// --- 메인 검색 페이지 (사용자만 남김) ---
+const SearchResultPage = () => {
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
-  const [activeTab, setActiveTab] = useState("movie");
   const [showScrollButton, setShowScrollButton] = useState(false);
 
-  const tabOptions = [
-    { id: "movie", label: "영화" },
-    { id: "user", label: "사용자" },
-  ];
-
   const handleSearch = () => {
-    console.log(`Searching for '${searchQuery}' in '${activeTab}'...`);
+    console.log(`Searching users & posts for '${searchQuery}'...`);
   };
 
   useEffect(() => {
@@ -211,7 +164,8 @@ const SearchPage = () => {
 
     const prevWidth = root.style.width;
     const prevMaxWidth = root.style.maxWidth;
-    root.style.width = "1280px"; // 고정 폭 root.style.maxWidth = 'none'; // 기존 max-width 영향 차단(선택)
+    root.style.width = "1280px"; // 고정 폭
+    root.style.maxWidth = "none"; // 기존 max-width 영향 차단(선택)
     return () => {
       root.style.width = prevWidth;
       root.style.maxWidth = prevMaxWidth;
@@ -230,7 +184,7 @@ const SearchPage = () => {
           </p>
         ) : (
           <p className="mt-6 text-lg text-gray-600">
-            영화, 사용자, 게시물을 한 곳에서 검색하세요.
+            사용자와 게시물을 검색하세요.
           </p>
         )}
         <div className="flex max-w-2xl gap-2 mx-auto mt-10">
@@ -245,29 +199,22 @@ const SearchPage = () => {
             Search
           </Button>
         </div>
-      </div>
-
-      <div className="border-b border-gray-200">
-        <nav className="flex justify-center -mb-px space-x-8" aria-label="Tabs">
-          {tabOptions.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm transition-colors duration-200 ease-in-out ${
-                activeTab === tab.id
-                  ? "border-black text-black"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-              }`}
+        <div className="pt-4">
+          <p className="mt-3 text-sm text-gray-500">
+            영화를 검색하시나요?{" "}
+            <Link
+              to="/movies"
+              className="font-medium text-blue-600 hover:underline"
             >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+              영화 검색으로 이동
+            </Link>
+          </p>
+        </div>
       </div>
 
+      {/* 탭 제거, 사용자 결과만 렌더 */}
       <div className="mt-8">
-        {activeTab === "movie" && <MovieResults />}
-        {activeTab === "user" && <UserResults />}
+        <UserResults />
       </div>
 
       {showScrollButton && (
@@ -285,4 +232,4 @@ const SearchPage = () => {
   );
 };
 
-export default SearchPage;
+export default SearchResultPage;
