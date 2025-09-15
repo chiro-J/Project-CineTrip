@@ -1,9 +1,6 @@
-import { Navigate, Outlet, useParams } from "react-router-dom";
-import { useAuthStore } from "../stores/authStore";
+import { Outlet } from "react-router-dom";
 
 const PrivateRoute = () => {
-  const user = useAuthStore((state) => state.user);
-  const { userId } = useParams();
 
   // 로그인 상태 확인 및 URL 파라미터와 유저 ID 일치 여부 확인
   // TODO: 테스트를 위해 임시로 주석 처리 - 나중에 복구 필요

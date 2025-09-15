@@ -14,6 +14,7 @@ import MovieDetails from "../pages/movies/Detail";
 import ProtectedRoute from "./ProtectedRoute";
 import PrivateRoute from "./PrivateRoute";
 import PublicRoute from "./PublicRoute";
+import MovieSearchMain from "../pages/movies";
 
 function AppRoutes() {
   return (
@@ -33,7 +34,7 @@ function AppRoutes() {
           <Route path="/user/:userId/gallery" element={<GalleryPage />} />
           <Route path="/search" element={<SearchResultPage />} />
           <Route path="/movies/:movieId" element={<MovieDetails />} />
-          {/* <Route path="/search?q=:query" element={<Search />} 서치 페이지가 아직 없음/> */}
+          <Route path="/movies" element={<MovieSearchMain />} />
         </Route>
 
         {/* 본인만 접근 가능한 페이지들 */}
