@@ -1,38 +1,50 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
-const SocialLoginModal = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface SocialLoginModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SocialLoginModal = ({ isOpen, onClose }: SocialLoginModalProps) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
 
-    // Google 로그인 로직 시뮬레이션
+    // Admin 로그인 시뮬레이션
     setTimeout(() => {
-      console.log("Google 로그인 완료");
+      // Admin 사용자로 로그인
+      const adminUser = {
+        id: 'admin-001',
+        username: 'Admin',
+        email: 'admin@cinetrip.com',
+        avatarUrl: 'https://picsum.photos/seed/admin/40/40',
+        role: 'admin' as const
+      };
+      
+      login(adminUser);
       setIsLoggingIn(false);
-      closeModal();
-    }, 2000);
+      onClose();
+      navigate('/home');
+    }, 1500);
   };
 
-  return (
-    <div className="flex items-center justify-center min-h-screen p-4 bg-gray-100">
-      {/* 모달 열기 버튼 */}
-      <Button variant="primary" size="lg" onClick={openModal}>
-        로그인 모달 열기
-      </Button>
+  if (!isOpen) return null;
 
+  return (
+    <>
       {/* 모달 오버레이 */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-300 bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
           <div className="relative w-full max-w-md mx-auto bg-white shadow-2xl rounded-3xl">
             {/* 닫기 버튼 */}
             <Button
-              onClick={closeModal}
+              onClick={onClose}
               className="absolute flex items-center justify-center w-8 h-8 text-2xl text-gray-400 top-4 right-4 hover:text-gray-600"
             >
               ×
@@ -97,7 +109,7 @@ const SocialLoginModal = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
