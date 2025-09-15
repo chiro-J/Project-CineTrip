@@ -227,7 +227,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   };
   return (
     // 전체 레이아웃을 스크롤 가능하게 만듭니다.
-    <div className="w-full h-full bg-gray-50">
+    <div className="w-full min-h-screen bg-gray-50">
       <Header />
       <SideNavigationBar />
 
@@ -248,7 +248,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         <main className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {renderContent()}
         </main>
-        <PostModal item={selectedItem} onClose={closeModal} />
+        {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
         <PostUploadModal
           isOpen={isUploadModalOpen}
           onClose={closeUploadModal}
