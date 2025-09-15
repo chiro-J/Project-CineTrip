@@ -6,13 +6,7 @@ import { Button } from "../../components/ui/Button";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
 import PostUploadModal from "../../components/upload/Upload";
-
-type Item = {
-  id: string | number;
-  src: string;
-  alt?: string;
-  likes?: number;
-};
+import { type Item } from "../../types/common";
 
 // 더미데이터
 const mockPhotos: Item[] = Array.from({ length: 15 }, (_, index) => ({
@@ -216,7 +210,6 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             items={mockMovies}
             emptyMessage="감상한 영화가 없습니다."
             isOwner={isOwner}
-            onItemClick={handleItemClick}
           />
         );
       case "bookmarks":
@@ -226,7 +219,6 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             emptyMessage="북마크한 영화가 없습니다."
             onSearchMoviesClick={handleSearchMoviesClick}
             isOwner={isOwner}
-            onItemClick={handleItemClick}
           />
         );
       default:

@@ -7,7 +7,9 @@ import { ChevronUp } from "lucide-react";
 import PostModal from "../../components/post/PostModal";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import Footer from "../../components/layout/Footer";
+import { type Item } from "../../types/common";
 import { useSearchParams } from "react-router-dom";
+
 
 // --- 타입 정의 ---
 
@@ -17,13 +19,6 @@ type UserProfile = {
   username: string;
   handle: string;
   bio: string;
-};
-
-type Item = {
-  id: string | number;
-  src: string;
-  alt?: string;
-  likes?: number;
 };
 
 // --- Mock 데이터 및 API 시뮬레이션 ---

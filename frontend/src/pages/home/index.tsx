@@ -5,6 +5,8 @@ import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import SocialLoginModal from "../../components/auth/Login";
 import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import PostModal from "../../components/post/PostModal";
+
 
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
 
@@ -25,8 +27,10 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
   return new Promise((resolve) => {
     console.log(`Fetching page ${page}...`);
     setTimeout(() => {
+
       const newImages = Array.from({ length: 5 }, (_, i) => {
         const id = page * 5 + i;
+
         const height = Math.floor(Math.random() * 600) + 200; // 200 to 800px
         return {
           id: `m-${id}`,
@@ -158,6 +162,24 @@ const Home = () => {
       setShowLoginModal(false);
     }
   };
+  // post-modal 관련 함수
+  const [selectedItem, setSelectedItem] = useState<ImageItem | null>(null);
+
+  const closeModal = () => {
+    setSelectedItem(null);
+  };
+
+  const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const img = target.closest("img") as HTMLImageElement | null;
+    if (!img) return;
+
+    const src = img.getAttribute("src");
+    if (!src) return;
+
+    const item = images.find((p) => p.src === src);
+    if (item) setSelectedItem(item);
+  };
 
   return (
     <>
@@ -170,14 +192,18 @@ const Home = () => {
           <Header />
         </nav>
       </div>
-      <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
-        <InfiniteMasonryLayout images={images} />
-        {/* 스크롤 감지를 위한 타겟 요소 */}
-        <div ref={observerTarget} style={{ height: "20px" }} />
-        {/* 로딩 중일 때와 더 이상 데이터가 없을 때 메시지 표시 */}
-        {loading && <p className="text-center">Loading more images...</p>}
-        {!hasMore && <p className="text-center">All images loaded.</p>}
-      </main>
+      
+      <div onClick={handleGridClick}>
+        <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
+          <InfiniteMasonryLayout images={images} />
+          {/* 스크롤 감지를 위한 타겟 요소 */}
+          <div ref={observerTarget} style={{ height: "20px" }} />
+          {/* 로딩 중일 때와 더 이상 데이터가 없을 때 메시지 표시 */}
+          {loading && <p className="text-center">Loading more images...</p>}
+          {!hasMore && <p className="text-center">All images loaded.</p>}
+        </main>
+      </div>
+
       {/* 스크롤 최상단 이동 버튼 */}
       {showScrollButton && (
         <button
@@ -201,6 +227,9 @@ const Home = () => {
           </svg>
         </button>
       )}
+
+      {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
+
 
       {/* 로그인 모달 */}
       <SocialLoginModal

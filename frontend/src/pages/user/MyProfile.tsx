@@ -8,6 +8,9 @@ import ChecklistPage from "../../components/checklist/ChecklistPage";
 import { Avatar } from "../../components/ui/Avatar";
 import { useNavigate } from "react-router-dom";
 import AuthContext, { useAuth } from "../../contexts/AuthContext";
+import { type Item } from "../../types/common";
+import PostModal from "../../components/post/PostModal";
+import { useState } from "react";
 
 // --- Mock Data ---
 const uploadedPhotos = [
@@ -60,6 +63,24 @@ const UserProfilePage = (): React.ReactElement => {
     navigate("/profile/gallery?tab=movies");
   };
 
+  const [selectedImage, setSelectedImage] = useState<Item | null>(null);
+
+  // '유저 사진' 그리드에서 이미지를 클릭했을 때 실행될 핸들러 함수를 추가합니다.
+  const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    const imgElement = target.closest("img"); // 클릭된 요소가 이미지인지 확인합니다.
+
+    if (imgElement && imgElement.src) {
+      // 클릭된 이미지의 src와 일치하는 데이터를 MOCK_GRID_IMAGES3에서 찾습니다.
+      const foundImage = uploadedPhotos.find(
+        (img) => img.src === imgElement.src
+      );
+      if (foundImage) {
+        setSelectedImage(foundImage); // 찾은 이미지로 state를 업데이트하여 모달을 엽니다.
+      }
+    }
+  };
+
   return (
     <div className="flex font-sans bg-white max-w-screen">
       <SideNavigationBar />
@@ -106,7 +127,9 @@ const UserProfilePage = (): React.ReactElement => {
                 edit
               </Button>
             </div>
-            <GridLayout images={uploadedPhotos} className="grid-cols-4" />
+            <div onClick={handleUserImageClick} className="cursor-pointer">
+              <GridLayout images={uploadedPhotos} className="grid-cols-4" />
+            </div>
           </section>
 
           {/* 4. 감상한 영화 섹션 */}
@@ -125,6 +148,13 @@ const UserProfilePage = (): React.ReactElement => {
           </section>
         </main>
       </div>
+      {/* 4. selectedImage가 있을 때만 PostModal을 렌더링합니다. */}
+      {selectedImage && (
+        <PostModal
+          item={selectedImage}
+          onClose={() => setSelectedImage(null)} // 모달을 닫을 때 state를 null로 초기화합니다.
+        />
+      )}
     </div>
   );
 };
