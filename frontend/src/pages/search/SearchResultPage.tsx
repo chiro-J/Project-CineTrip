@@ -203,7 +203,11 @@ const SearchResultPage = () => {
           <p className="mt-3 text-sm text-gray-500">
             영화를 검색하시나요?{" "}
             <Link
-              to="/movies"
+              to={
+                searchQuery
+                  ? `/movies?q=${encodeURIComponent(searchQuery)}`
+                  : "/movies"
+              }
               className="font-medium text-blue-600 hover:underline"
             >
               영화 검색으로 이동
