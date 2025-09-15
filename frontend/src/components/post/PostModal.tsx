@@ -126,6 +126,11 @@ const PostModal: React.FC<PostModalProps> = ({
     setShowAllComments(!showAllComments);
   };
 
+  const [imgMeta, setImgMeta] = useState<{
+    ratio: number;
+    mode: "wide" | "tall" | "square";
+  }>({ ratio: 1, mode: "square" });
+
   // item prop에서 이미지 소스와 alt 텍스트를 추출
   const { src: imageSrc, alt: imageAlt } = item;
 
@@ -154,11 +159,29 @@ const PostModal: React.FC<PostModalProps> = ({
           </div>
 
           {/* --- 이미지 --- */}
-          <div className="flex items-center justify-center w-full bg-white aspect-square">
+          <div
+            className={`flex items-center justify-center w-full bg-white ${
+              imgMeta.mode === "square" ? "aspect-square" : ""
+            } max-w-[min(90vw,900px)] max-h-[80vh] rounded-lg overflow-hidden`}
+            style={
+              imgMeta.mode !== "square"
+                ? { aspectRatio: imgMeta.ratio }
+                : undefined
+            }
+          >
             <img
               src={imageSrc}
               alt={imageAlt || "Post content"}
-              className="object-contain w-full h-full rounded-lg"
+              className="object-contain w-full h-full"
+              // [ADD] 로드 후 실제 비율 계산
+              onLoad={(e) => {
+                const w = e.currentTarget.naturalWidth || 1;
+                const h = e.currentTarget.naturalHeight || 1;
+                const r = w / h;
+                // 임계값은 취향대로 조절 가능(1.15 / 0.85)
+                const mode = r > 1.15 ? "wide" : r < 0.85 ? "tall" : "square";
+                setImgMeta({ ratio: r, mode });
+              }}
               onError={(e) => {
                 e.currentTarget.src =
                   "https://placehold.co/600x600/f87171/ffffff?text=Error";

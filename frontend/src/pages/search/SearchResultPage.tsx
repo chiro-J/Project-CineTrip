@@ -7,6 +7,7 @@ import { ChevronUp } from "lucide-react";
 import PostModal from "../../components/post/PostModal";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import Footer from "../../components/layout/Footer";
+import { type Item } from "../../types/common";
 
 // --- 타입 정의 ---
 
@@ -16,13 +17,6 @@ type UserProfile = {
   username: string;
   handle: string;
   bio: string;
-};
-
-type Item = {
-  id: string | number;
-  src: string;
-  alt?: string;
-  likes?: number;
 };
 
 // --- Mock 데이터 및 API 시뮬레이션 ---
@@ -217,7 +211,7 @@ const SearchPage = () => {
   return (
     <div className="px-4 mx-auto pt-18 max-w-7xl sm:px-6 lg:px-8">
       <Header />
-      <SideNavigationBar isLoggedIn={true} />
+      <SideNavigationBar />
 
       <div className="mb-16 text-center">
         <p className="mt-6 text-lg text-gray-600">
