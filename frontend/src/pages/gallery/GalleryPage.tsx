@@ -132,12 +132,71 @@ const TabContent: React.FC<TabContentProps> = ({
 const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   isOwner = true, // 기본값을 true로 설정하여 본인 프로필로 간주합니다.
 }) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { userPhotosForGallery, userMoviesForGallery, userBookmarksForGallery } = useAuth();
+  const { userPhotosForGallery, userMoviesForGallery, userBookmarksForGallery, user, isFollowing } = useAuth();
+
   const [activeTab, setActiveTab] = useState<"photos" | "movies" | "bookmarks">(
     "photos"
   );
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+  // Mock 데이터로 테스트
+  const getMockPhotoData = (itemId: string) => {
+    const mockData = {
+      "photo-1": {
+        id: "photo-1",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "도쿄, 일본",
+        description: "인셉션 촬영지입니다.",
+      },
+      "photo-2": {
+        id: "photo-2",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "뉴욕, 미국",
+        description: "어벤져스 촬영지입니다.",
+      },
+      "photo-3": {
+        id: "photo-3",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "런던, 영국",
+        description: "해리포터 촬영지입니다.",
+      },
+      "admin-photo-1": {
+        id: "admin-photo-1",
+        authorId: "admin-001",
+        authorName: "Admin",
+        location: "뉴질랜드, 웰링턴",
+        description: "아바타 촬영지입니다.",
+      },
+      "admin-photo-2": {
+        id: "admin-photo-2",
+        authorId: "admin-001",
+        authorName: "Admin",
+        location: "뉴질랜드, 호비튼",
+        description: "반지의 제왕 촬영지입니다.",
+      }
+    };
+
+    // Mock 데이터에 없으면 현재 로그인한 사용자의 새 게시물로 간주
+    return mockData[itemId as keyof typeof mockData] || {
+      id: itemId,
+      authorId: user?.id || "unknown",
+      authorName: user?.username || "사용자",
+      location: "새로 업로드된 위치",
+      description: "새로 업로드된 게시물입니다.",
+    };
+  };
+
+  const selectedPhotoData = selectedItem ? getMockPhotoData(selectedItem.id) : null;
+
+  // 디버깅: 선택된 데이터 확인
+  console.log("Selected item:", selectedItem);
+  console.log("Mock photo data:", selectedPhotoData);
 
   // URL 파라미터에서 tab 값을 읽어서 activeTab 설정
   useEffect(() => {
@@ -147,8 +206,11 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
     }
   }, [searchParams]);
 
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  // 탭 변경 핸들러 - URL 업데이트
+  const handleTabChange = (tabId: "photos" | "movies" | "bookmarks") => {
+    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
+  };
 
   const handleItemClick = (item: Item) => {
     // movieId가 있으면 영화 디테일 페이지로 이동
@@ -230,7 +292,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => handleTabChange(tab.id as "photos" | "movies" | "bookmarks")}
               className={`flex-1 py-3 px-4 text-sm font-semibold text-center transition-colors duration-200 ${activeTab === tab.id ? "border-b-2 border-gray-900 text-gray-900" : "text-gray-500 hover:text-gray-800"}`}
             >
               {tab.label}
@@ -241,7 +303,18 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         <main className="grid flex-1 grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {renderContent()}
         </main>
-        {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
+        {selectedItem && selectedPhotoData && (
+          <PostModal
+            key={`${selectedItem.id}-${selectedPhotoData.location}-${selectedPhotoData.description}`}
+            item={selectedItem}
+            onClose={closeModal}
+            authorId={selectedPhotoData.authorId}
+            authorName={selectedPhotoData.authorName}
+            photoId={selectedPhotoData.id}
+            locationLabel={selectedPhotoData.location}
+            descriptionText={selectedPhotoData.description}
+          />
+        )}
         <PostUploadModal
           isOpen={isUploadModalOpen}
           onClose={closeUploadModal}
