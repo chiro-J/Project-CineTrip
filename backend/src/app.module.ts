@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,7 +16,7 @@ import { SearchModule } from './modules/search/search.module';
 import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
-  imports: [AuthModule, UsersModule, MoviesModule, LocationsModule, PhotosModule, CommentsModule, ChecklistModule, RecommendationsModule, FeedModule, GalleryModule, SearchModule, UploadModule],
+  imports: [ConfigModule.forRoot({ isGlobal: true }), AuthModule, UsersModule, MoviesModule, LocationsModule, PhotosModule, CommentsModule, ChecklistModule, RecommendationsModule, FeedModule, GalleryModule, SearchModule, UploadModule],
   controllers: [AppController],
   providers: [AppService],
 })
