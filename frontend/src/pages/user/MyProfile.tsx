@@ -77,7 +77,11 @@ const UserProfilePage = (): React.ReactElement => {
           {/* 1. 사용자 프로필 섹션 */}
           <section className="flex justify-between mt-6">
             <div className="flex gap-6">
-              <Avatar size="xl" src={user?.avatarUrl} />
+              <Avatar
+                size="xl"
+                src={user?.avatarUrl || undefined}
+                fallback={user?.username?.charAt(0).toUpperCase()}
+              />
               <div className="text-left" style={{ textAlign: "left" }}>
                 <h1 className="text-2xl font-bold">{user?.username}</h1>
                 <p className="mt-1 text-gray-600">Traveler, Foodie</p>

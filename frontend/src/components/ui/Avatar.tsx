@@ -52,12 +52,28 @@ export const Avatar: React.FC<AvatarProps> = ({
     setImageError(true);
   };
 
+  // 랜덤 색상 생성 함수 (fallback prop을 기반으로 일관된 색상 생성)
+  const generateColorFromText = (text: string): string => {
+    if (!text) return "bg-gray-300";
+
+    const colors = [
+      "bg-blue-500", "bg-green-500", "bg-purple-500", "bg-pink-500",
+      "bg-indigo-500", "bg-red-500", "bg-yellow-500", "bg-orange-500",
+      "bg-teal-500", "bg-cyan-500", "bg-violet-500", "bg-rose-500"
+    ];
+
+    // 텍스트의 첫 글자로 색상 인덱스 생성 (일관성을 위해)
+    const charCode = text.charCodeAt(0);
+    const colorIndex = charCode % colors.length;
+    return colors[colorIndex];
+  };
+
   const shapeClass = shape === "circle" ? "rounded-full" : "rounded-lg";
   const cursorClass = onClick ? "cursor-pointer hover:opacity-80" : "";
 
   // Fallback 컴포넌트 (이미지가 없거나 로드 실패 시)
   const FallbackAvatar = () => {
-    const bgColor = fallback ? "bg-blue-500" : "bg-gray-300";
+    const bgColor = fallback ? generateColorFromText(fallback) : "bg-gray-300";
 
     return (
       <div

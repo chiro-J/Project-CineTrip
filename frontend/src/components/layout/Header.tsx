@@ -128,7 +128,12 @@ const Header = (): React.ReactElement => {
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               className="flex items-center space-x-3"
             >
-              <Avatar size="md" src={user.avatarUrl} alt={user.username} />
+              <Avatar
+                size="md"
+                src={user.avatarUrl || undefined}
+                alt={user.username}
+                fallback={user.username?.charAt(0).toUpperCase()}
+              />
               <span className="font-medium text-gray-700">{user.username}</span>
             </button>
 

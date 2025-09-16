@@ -50,7 +50,12 @@ const UserDropdown = ({
   return (
     <div className="w-64 bg-white border border-gray-200 shadow-lg rounded-xl">
       <div className="flex items-center p-4 space-x-3">
-        <Avatar size="md" src={user.avatarUrl} alt={user.username} />
+        <Avatar
+          size="md"
+          src={user.avatarUrl || undefined}
+          alt={user.username}
+          fallback={user.username?.charAt(0).toUpperCase()}
+        />
         <div>
           <p className="text-sm font-medium text-gray-600 truncate">
             {user.email}

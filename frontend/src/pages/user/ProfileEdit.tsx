@@ -251,7 +251,7 @@ const ProfileEditPage = () => {
           ...user,
           username: tempName,
           email: tempEmail,
-          avatarUrl: profileImage || user.avatarUrl,
+          avatarUrl: profileImage,
         };
         login(updatedUser);
       }
@@ -331,7 +331,6 @@ const ProfileEditPage = () => {
                         src={profileImage || undefined}
                         size="xl"
                         fallback={user?.username?.charAt(0).toUpperCase()}
-                        className="bg-blue-500"
                       />
                     </td>
                     <td

@@ -7,6 +7,7 @@ import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
+import { useAuth } from "../../contexts/AuthContext";
 
 // 테스트용 모의(mock) 데이터입니다. 실제로는 API를 통해 받아오게 됩니다.
 // 이미지 URL은 AWS S3 URL을 가정합니다.
@@ -60,6 +61,7 @@ const recommendedPlaces = [
  * 사용자 프로필 페이지 컴포넌트
  */
 const Profile = () => {
+  const { user } = useAuth();
   // '추천 장소' 섹션 확장 여부를 위한 State
   const [isRecommendedExpanded, setIsRecommendedExpanded] = useState(false);
   // 스크롤 컨테이너를 참조하기 위한 ref
@@ -116,10 +118,14 @@ const Profile = () => {
           {/* 1. 사용자 프로필 정보 섹션 */}
           <section className="flex flex-col items-center justify-between mb-20 sm:flex-row">
             <div className="flex items-center">
-              <Avatar />
+              <Avatar
+                src={user?.avatarUrl || undefined}
+                size="lg"
+                fallback={user?.username?.charAt(0).toUpperCase()}
+              />
               <div className="ml-6">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold">사용자 이름</h2>
+                  <h2 className="text-2xl font-bold">{user?.username || "사용자 이름"}</h2>
                   <svg
                     className="w-4 h-4 text-gray-400"
                     fill="none"
