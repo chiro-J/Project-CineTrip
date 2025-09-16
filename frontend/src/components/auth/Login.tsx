@@ -1,50 +1,35 @@
 import { useState } from "react";
 import { Button } from "../ui/Button";
-import { useAuth } from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/authStore";
 
-interface SocialLoginModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+const SocialLoginModal = () => {
 
-const SocialLoginModal = ({ isOpen, onClose }: SocialLoginModalProps) => {
+  // 모달 상태와 액션을 Zustand 스토어에서 가져옴
+  const isLoginModalOpen = useAuthStore(s => s.isLoginModalOpen);
+  const closeLoginModal  = useAuthStore(s => s.closeLoginModal);
+
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
+  
   const handleGoogleLogin = async () => {
     setIsLoggingIn(true);
-
-    // Admin 로그인 시뮬레이션
-    setTimeout(() => {
-      // Admin 사용자로 로그인
-      const adminUser = {
-        id: 'admin-001',
-        username: 'Admin',
-        email: 'admin@cinetrip.com',
-        avatarUrl: 'https://picsum.photos/seed/admin/40/40',
-        role: 'admin' as const
-      };
-      
-      login(adminUser);
-      setIsLoggingIn(false);
-      onClose();
-      navigate('/home');
-    }, 1500);
+    // NestJS 백엔드의 Google OAuth 엔드포인트로 사용자를 리디렉션합니다.
+    window.location.href = "http://localhost:3000/auth/google";
   };
 
-  if (!isOpen) return null;
+  // isLoginModalOpen 상태가 false이면 아무것도 렌더링하지 않습니다.
+  if (!isLoginModalOpen) {
+    return null;
+  }
 
   return (
     <>
       {/* 모달 오버레이 */}
-      {isOpen && (
+      
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
           <div className="relative w-full max-w-md mx-auto bg-white shadow-2xl rounded-3xl">
             {/* 닫기 버튼 */}
             <Button
-              onClick={onClose}
+              onClick={closeLoginModal}
               className="absolute flex items-center justify-center w-8 h-8 text-2xl text-gray-400 top-4 right-4 hover:text-gray-600"
             >
               ×
@@ -108,7 +93,7 @@ const SocialLoginModal = ({ isOpen, onClose }: SocialLoginModalProps) => {
             </div>
           </div>
         </div>
-      )}
+      
     </>
   );
 };

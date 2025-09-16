@@ -1,9 +1,6 @@
 import Card from "../../components/ui/Card";
 import { GridLayout } from "../../components/layout/ImageContainer";
 import { Button } from "../../components/ui/Button";
-import Header from "../../components/layout/Header";
-import Footer from "../../components/layout/Footer";
-import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -170,8 +167,6 @@ const MovieDetails = () => {
   if (loading) {
     return (
       <>
-        <Header />
-        <SideNavigationBar />
         <div className="flex items-center justify-center py-20">
           <div className="text-lg text-gray-600">
             영화 정보를 불러오는 중...
@@ -185,8 +180,6 @@ const MovieDetails = () => {
   if (error || !movie) {
     return (
       <>
-        <Header />
-        <SideNavigationBar />
         <div className="flex items-center justify-center py-20">
           <div className="text-lg text-red-600">
             {error || "영화를 찾을 수 없습니다."}
@@ -198,10 +191,6 @@ const MovieDetails = () => {
 
   return (
     <>
-      <div>
-        <Header />
-        <SideNavigationBar />
-      </div>
       <div
         className="text-[#111827]"
         style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
@@ -302,7 +291,6 @@ const MovieDetails = () => {
           </section>
         </div>
       </div>
-      <Footer />
 
       {/* 4. selectedImage가 있을 때만 PostModal을 렌더링합니다. */}
       {selectedImage && (

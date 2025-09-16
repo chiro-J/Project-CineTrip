@@ -1,9 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { InfiniteMasonryLayout } from "../../components/layout/ImageContainer";
-import Header from "../../components/layout/Header";
-import SideNavigationBar from "../../components/layout/SideNavigationBar";
-import SocialLoginModal from "../../components/auth/Login";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 import { useNavigate } from "react-router-dom";
 import PostModal from "../../components/post/PostModal";
 
@@ -49,7 +46,12 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
  */
 
 const Home = () => {
-  const { isLoggedIn } = useAuth();
+  // Zustand 스토어에서 로그인 상태와 모달 상태를 가져옵니다.
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const isLoginModalOpen = useAuthStore((state) => state.isLoginModalOpen);
+  const openLoginModal = useAuthStore((state) => state.openLoginModal);
+  const closeLoginModal = useAuthStore((state) => state.closeLoginModal);
+  
   const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[]>([]);
   const [page, setPage] = useState(1);
@@ -183,16 +185,6 @@ const Home = () => {
 
   return (
     <>
-      <SideNavigationBar />
-      <div
-        className="mb-6 text-[#111827]"
-        style={{ fontFamily: "'Noto Sans KR', sans-serif" }}
-      >
-        <nav>
-          <Header />
-        </nav>
-      </div>
-      
       <div onClick={handleGridClick}>
         <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
           <InfiniteMasonryLayout images={images} />
@@ -229,13 +221,6 @@ const Home = () => {
       )}
 
       {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
-
-
-      {/* 로그인 모달 */}
-      <SocialLoginModal
-        isOpen={showLoginModal}
-        onClose={handleLoginModalClose}
-      />
     </>
   );
 };

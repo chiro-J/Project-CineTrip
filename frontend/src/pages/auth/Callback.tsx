@@ -1,32 +1,63 @@
-import { useState } from "react";
-import { Button } from "../../components/ui/Button";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/authStore";
 
 const SocialLoginModal = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  // Zustand 스토어에서 모달 상태와 닫기 액션을 가져옵니다.
+  const isLoginModalOpen = useAuthStore(s => s.isLoginModalOpen);
+  const closeLoginModal  = useAuthStore(s => s.closeLoginModal);
 
-  const openModal = () => setIsOpen(true);
-  const closeModal = () => setIsOpen(false);
+  const navigate = useNavigate();
+
+  const login = useAuthStore((state) => state.login);
+
+  useEffect(() => {
+  let cancelled = false;
+
+  (async () => {
+    try {
+      const res = await fetch('http://localhost:3000/auth/me', {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const { user, access_token } = await res.json(); // API 응답에서 토큰과 사용자 정보를 구조분해 할당
+          if (!cancelled) {
+            login(access_token, user); // 토큰과 사용자 정보를 login 함수에 전달
+        };
+      }
+    } catch (error) {
+        console.error("사용자 정보 가져오기 실패:", error);
+    } finally {
+      if (!cancelled) {
+        useAuthStore.getState().closeLoginModal?.();
+        navigate('/home', { replace: true });
+      }
+    }
+  })();
+
+  return () => { cancelled = true; };
+}, [navigate, closeLoginModal, login]);
 
   const handleGoogleLogin = () => {
     // Google 로그인 로직 구현
-    console.log("Google 로그인 시도");
-    // 실제 구현시에는 Google OAuth API를 사용
+    window.location.href = "http://localhost:3000/auth/google";
   };
+
+  // 모달을 렌더링할 필요가 없을 때 아무것도 반환하지 않음
+  if (!isLoginModalOpen) {
+    return null;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4 bg-gray-100">
-      {/* 모달 열기 버튼 */}
-      <Button variant="primary" size="lg" onClick={openModal}>
-        로그인 모달 열기
-      </Button>
-
+      
       {/* 모달 오버레이 */}
-      {isOpen && (
+      
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <div className="relative w-full max-w-md mx-auto bg-white shadow-2xl rounded-3xl">
             {/* 닫기 버튼 */}
             <button
-              onClick={closeModal}
+              onClick={closeLoginModal}
               className="absolute text-2xl text-gray-400 top-4 right-4 hover:text-gray-600"
             >
               ×
@@ -83,7 +114,7 @@ const SocialLoginModal = () => {
             </div>
           </div>
         </div>
-      )}
+      
     </div>
   );
 };

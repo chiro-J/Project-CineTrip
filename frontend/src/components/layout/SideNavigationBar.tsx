@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react"; // 닫기(X) 아이콘 추가
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 
 // JSDoc: 네비게이션 아이템의 데이터 구조를 정의합니다.
 /**
@@ -52,7 +52,8 @@ const SideNavigationBar = ({
   onItemClick,
   onToggle,
 }: SideNavigationBarProps): React.ReactElement | null => {
-  const { isLoggedIn } = useAuth();
+  const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
+  const user = useAuthStore((state) => state.user);
   const location = useLocation();
 
   // 로그인 상태가 아니라면 컴포넌트를 렌더링하지 않습니다.
@@ -128,7 +129,9 @@ const SideNavigationBar = ({
         navigate("/movies");
         break;
       case "profile":
-        navigate("/user/1/edit"); // 샘플 예시, 실제로는 user/1/edit을 user에 맞게 변경해야 함.
+        if (user?.email) {
+          navigate(`/user/${user.email}/edit`);
+        }
         break;
       default:
         break;

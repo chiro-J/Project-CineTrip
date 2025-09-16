@@ -2,8 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../../components/ui/Avatar"; // 가정된 Avatar 컴포넌트 경로
 import logo from "../../assets/logos/logo.png";
 import { GridLayout } from "../../components/layout/ImageContainer";
-import Footer from "../../components/layout/Footer";
-import SocialLoginModal from "../../components/auth/Login";
+import { useAuthStore } from "../../stores/authStore";
 
 /**
  * 사용자 프로필 정보 인터페이스
@@ -16,52 +15,6 @@ interface UserProfile {
   email: string; // 드롭다운 메뉴에서 사용하기 위해 email 추가
   avatarUrl: string;
 }
-
-
-interface LandingHeaderProps {
-  user?: UserProfile;
-  onLoginClick: () => void;
-}
-
-/**
- * 랜딩페이지용 헤더 컴포넌트
- */
-const Header = ({ user, onLoginClick }: LandingHeaderProps): React.ReactElement => {
-  return (
-    <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
-      {/* 1. 로고 영역 (이동 기능 제거) */}
-      <div className="flex items-center space-x-2">
-        <img
-          src={logo}
-          alt="CineTrip Logo"
-          className="w-8 h-8 rounded-full" // 로고 스타일에 맞게 className을 수정하세요.
-        />
-        <span className="text-xl font-bold text-gray-800">CineTrip</span>
-      </div>
-
-      {/* 3. 사용자 정보 및 드롭다운 영역 */}
-      <div className="relative">
-        {user ? (
-          // 로그인 상태: 클릭 가능한 사용자 프로필 영역
-          <>
-            <button className="flex items-center space-x-3">
-              <Avatar size="md" src={user.avatarUrl} alt={user.username} />
-              <span className="font-medium text-gray-700">{user.username}</span>
-            </button>
-          </>
-        ) : (
-          // 로그아웃 상태: 로그인 버튼
-          <button 
-            onClick={onLoginClick}
-            className="px-4 py-1.5 text-sm font-medium text-black bg-white rounded-md hover:!bg-gray-400"
-          >
-            로그인
-          </button>
-        )}
-      </div>
-    </nav>
-  );
-};
 
 const LandingStyles = () => (
   <>
@@ -115,12 +68,17 @@ const LandingStyles = () => (
 );
 
 export const Landing = () => {
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const viewportRef = useRef(null);
   const slidesRef = useRef<(HTMLDivElement | null)[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const isAnimatingRef = useRef(false);
+
+  // Zustand 스토어에서 모달 열기 액션을 가져옴
+  const openLoginModal = useAuthStore((state) => state.openLoginModal);
+
+  // Zustand 스토어에서 모달 상태를 가져옴
+  const isLoginModalOpen = useAuthStore((state) => state.isLoginModalOpen);
 
   const slidesData = [
     {
@@ -255,26 +213,15 @@ export const Landing = () => {
     };
   }, [totalSlides, isLoginModalOpen]);
 
+  // handleLoginClick 함수를 수정하여 전역 상태를 업데이트하도록 변경
   const handleLoginClick = () => {
-    setIsLoginModalOpen(true);
-    // 모달이 열릴 때 애니메이션 상태를 고정
-    isAnimatingRef.current = true;
-  };
-
-  const handleLoginModalClose = () => {
-    setIsLoginModalOpen(false);
-    // 모달이 닫힐 때 애니메이션 상태를 리셋
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 100);
+    openLoginModal();
   };
 
   return (
     <>
-      <Header onLoginClick={handleLoginClick} />
-      <SocialLoginModal isOpen={isLoginModalOpen} onClose={handleLoginModalClose} />
       <LandingStyles />
-      <main className="relative mt-16" onClick={handleLoginClick}>
+      <main className="relative mt-16">
         {/* Hero Section */}
         <section className="relative h-[70vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-gray-700 text-white">
           <div className="relative z-10 space-y-4">
@@ -361,7 +308,6 @@ export const Landing = () => {
           <GridLayout images={MOCK_GRID_IMAGES} className="grid-cols-3" />
         </section>
       </main>
-      <Footer />
     </>
   );
 

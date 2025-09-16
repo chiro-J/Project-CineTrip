@@ -1,22 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Avatar } from "../ui/Avatar";
 import UserDropdown from "./UserDropdown";
-import SocialLoginModal from "../auth/Login";
 import logo from "../../assets/logos/logo.png";
 import { Button } from "../ui/Button";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 
 /**
  * 전역 네비게이션 바 (GNB) 컴포넌트
  * 사이트 로고, 검색 기능, 사용자 프로필 영역(드롭다운 포함)을 포함합니다.
  */
 const Header = (): React.ReactElement => {
-  const { user, isLoggedIn, logout } = useAuth();
+  // Zustand 스토어에서 로그인 상태와 사용자 정보, 액션을 가져옵니다.
+  const user = useAuthStore(s => s.user);
+  const isLoggedIn = useAuthStore(s => s.isLoggedIn);
+  const logout = useAuthStore(s => s.logout);
+  const openLoginModal = useAuthStore(s => s.openLoginModal);
+
   // 드롭다운 메뉴의 열림/닫힘 상태를 관리하는 state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -46,7 +49,7 @@ const Header = (): React.ReactElement => {
   };
 
   /**
-   * 로그아웃 버튼 클릭 시 실행될 함수
+   * 로그아웃 핸들러를 Zustand 스토어의 logout 액션과 연결
    */
   const handleLogout = (): void => {
     logout();
@@ -59,20 +62,6 @@ const Header = (): React.ReactElement => {
    */
   const handleLogoClick = (): void => {
     navigate("/home");
-  };
-
-  /**
-   * 로그인 버튼 클릭 시 로그인 모달을 여는 함수
-   */
-  const handleLoginClick = (): void => {
-    setIsLoginModalOpen(true);
-  };
-
-  /**
-   * 로그인 모달을 닫는 함수
-   */
-  const handleLoginModalClose = (): void => {
-    setIsLoginModalOpen(false);
   };
 
   // 드롭다운 메뉴 외부를 클릭했을 때 메뉴를 닫는 effect
@@ -95,7 +84,7 @@ const Header = (): React.ReactElement => {
     <nav className="fixed top-0 left-0 z-50 flex items-center justify-between w-full px-6 py-3 bg-white shadow-md">
       {/* 1. 로고 영역 (홈으로 이동) */}
       <div 
-        className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+        className="flex items-center space-x-2 transition-opacity cursor-pointer hover:opacity-80"
         onClick={handleLogoClick}
       >
         <img src={logo} alt="CineTrip Logo" className="w-8 h-8 rounded-full" />
@@ -144,15 +133,10 @@ const Header = (): React.ReactElement => {
           </>
         ) : (
           // 로그아웃 상태: 로그인 버튼
-          <Button variant="outline" onClick={handleLoginClick}>로그인</Button>
+          <Button variant="outline" onClick={openLoginModal}>로그인</Button>
         )}
       </div>
       
-      {/* 로그인 모달 */}
-      <SocialLoginModal 
-        isOpen={isLoginModalOpen}
-        onClose={handleLoginModalClose}
-      />
     </nav>
   );
 };

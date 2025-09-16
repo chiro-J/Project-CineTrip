@@ -1,14 +1,13 @@
 import Card from "../../components/ui/Card";
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import Header from "../../components/layout/Header";
 import { Button } from "../../components/ui/Button";
-import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
 import PostUploadModal from "../../components/upload/Upload";
 import { type Item } from "../../types/common";
-import { useAuth } from "../../contexts/AuthContext";
 import { getImageUrl } from "../../types/movie";
+
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * 데이터가 없을 때 표시할 UI 컴포넌트
@@ -221,9 +220,6 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   return (
     // 전체 레이아웃을 스크롤 가능하게 만듭니다.
     <div className="w-full min-h-screen bg-gray-50">
-      <Header />
-      <SideNavigationBar />
-
       <div className="p-4 md:p-8">
         <nav className="sticky z-10 flex w-full mt-16 mb-10 border-b border-gray-200 top-24 bg-gray-50">
           {TABS.map((tab) => (

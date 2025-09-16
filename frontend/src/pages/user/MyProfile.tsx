@@ -1,12 +1,11 @@
 //미리보기: https://g.co/gemini/share/cc229dcc3f07
 
-import Header from "../../components/layout/Header";
-import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { Button } from "../../components/ui/Button";
 import { GridLayout } from "../../components/layout/ImageContainer";
 import ChecklistPage from "../../components/checklist/ChecklistPage";
 import { Avatar } from "../../components/ui/Avatar";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../../stores/authStore";
 import { useAuth } from "../../contexts/AuthContext";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
@@ -20,12 +19,16 @@ import { getImageUrl } from "../../types/movie";
  */
 const UserProfilePage = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { user, userPhotosForGallery, userMoviesForGallery } = useAuth();
+  const user = useAuthStore((state) => state.user);
+  const { userPhotosForGallery, userMoviesForGallery } = useAuth();
 
   const handleEditProfileClick = (): void => {
     console.log("Edit Profile button clicked");
     // 실제로는 로그인된 사용자의 ID를 사용해야 합니다
-    navigate("/user/1/edit"); // 임시로 1을 사용, 실제로는 useAuthStore에서 user.id를 가져와야 함
+    // user가 존재할 때만 user.id를 사용하도록 수정
+    if (user) {
+      navigate(`/user/${user.email}/edit`);
+    }
   };
   const handleEditPhotosClick = (): void => {
     console.log("Edit photos button clicked");
@@ -70,9 +73,7 @@ const UserProfilePage = (): React.ReactElement => {
 
   return (
     <div className="flex font-sans bg-white max-w-screen">
-      <SideNavigationBar />
       <div className="flex flex-col flex-1">
-        <Header />
         <main className="flex-1 p-16">
           {/* 1. 사용자 프로필 섹션 */}
           <section className="flex justify-between mt-6">
