@@ -1,7 +1,8 @@
 import { useState, useEffect, type SetStateAction } from "react";
-import { Heart, MapPin, Share2, Trash2 } from "lucide-react";
+import { Heart, MapPin, Share2, Trash2, Edit3, Save, X, ExternalLink } from "lucide-react";
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * 보여줄 아이템의 타입 정의
@@ -16,23 +17,49 @@ type ModalItem = {
  * @param item - 클릭한 카드의 정보 (src, alt). null이면 모달이 닫힙니다.
  * @param onClose - 닫기 핸들러 (부모의 item 상태를 null로 설정)
  * @param authorName - 작성자 이름
+ * @param authorId - 작성자 ID
+ * @param photoId - 사진 ID (삭제/수정용)
  * @param locationLabel - 위치 텍스트
+ * @param descriptionText - 설명 텍스트
  */
 type PostModalProps = {
   item: ModalItem | null;
   onClose: () => void;
   authorName?: string;
+  authorId?: string;
+  photoId?: string;
   locationLabel?: string;
+  descriptionText?: string;
 };
 
 const PostModal: React.FC<PostModalProps> = ({
   item,
   onClose,
   authorName = "Newbie",
+  authorId,
+  photoId,
   locationLabel = "Tower Bridge, London",
+  descriptionText = "",
 }) => {
   // item prop이 null이면 모달을 렌더링하지 않습니다.
   if (!item) return null;
+
+  // 디버깅: 전달받은 props 확인
+  console.log("PostModal props:", { photoId, authorId, authorName });
+
+  // 인증 정보 가져오기
+  const { user, isLoggedIn, deletePhoto, updatePhoto, togglePhotoLike, isPhotoLiked, toggleFollow, isFollowing } = useAuth();
+
+  // 편집 모드 상태
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedLocation, setEditedLocation] = useState(locationLabel);
+  const [editedDescription, setEditedDescription] = useState(descriptionText || "");
+
+  // props가 변경될 때마다 편집 상태 업데이트
+  useEffect(() => {
+    setEditedLocation(locationLabel);
+    setEditedDescription(descriptionText || "");
+  }, [locationLabel, descriptionText]);
 
   // (선택) ESC로 닫기 + 스크롤 잠금
   useEffect(() => {
@@ -54,20 +81,71 @@ const PostModal: React.FC<PostModalProps> = ({
     { id: 4, author: "User4", text: "I want to go there too!" },
   ]);
   const [newComment, setNewComment] = useState("");
-  const [isLiked, setIsLiked] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
+
+  // 실제 좋아요 상태 관리 - localStorage에서 독립적으로 관리
+  const [isLiked, setIsLiked] = useState(false);
+  const [isUserFollowing, setIsUserFollowing] = useState(false);
+
+  // 상태 초기화
+  useEffect(() => {
+    if (photoId && user) {
+      // localStorage에서 좋아요 상태 확인
+      const likedPhotos = JSON.parse(localStorage.getItem(`likedPhotos_${user.id}`) || '[]');
+      setIsLiked(likedPhotos.includes(photoId));
+    }
+    if (authorId && user) {
+      // localStorage에서 팔로우 상태 확인
+      const followingUsers = JSON.parse(localStorage.getItem(`following_${user.id}`) || '[]');
+      setIsUserFollowing(followingUsers.includes(authorId));
+    }
+  }, [photoId, authorId, user]);
 
   const INITIAL_COMMENT_COUNT = 2;
 
   // 이벤트 핸들러 함수
   const handleFollowClick = () => {
-    setIsFollowing(!isFollowing);
+    if (authorId && user) {
+      const followingUsers = JSON.parse(localStorage.getItem(`following_${user.id}`) || '[]');
+      const newIsFollowing = !isUserFollowing;
+
+      if (newIsFollowing) {
+        // 팔로우 추가
+        const updatedFollowing = [...followingUsers, authorId];
+        localStorage.setItem(`following_${user.id}`, JSON.stringify(updatedFollowing));
+      } else {
+        // 팔로우 취소
+        const updatedFollowing = followingUsers.filter((id: string) => id !== authorId);
+        localStorage.setItem(`following_${user.id}`, JSON.stringify(updatedFollowing));
+      }
+
+      setIsUserFollowing(newIsFollowing);
+      console.log(`${newIsFollowing ? '팔로우' : '언팔로우'}되었습니다!`);
+    } else {
+      console.error("작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다.");
+    }
   };
 
   const handleLikeClick = () => {
-    setIsLiked(!isLiked);
-    console.log("Like button clicked!");
+    if (photoId && user) {
+      const likedPhotos = JSON.parse(localStorage.getItem(`likedPhotos_${user.id}`) || '[]');
+      const newIsLiked = !isLiked;
+
+      if (newIsLiked) {
+        // 좋아요 추가
+        const updatedLikedPhotos = [...likedPhotos, photoId];
+        localStorage.setItem(`likedPhotos_${user.id}`, JSON.stringify(updatedLikedPhotos));
+      } else {
+        // 좋아요 취소
+        const updatedLikedPhotos = likedPhotos.filter((id: string) => id !== photoId);
+        localStorage.setItem(`likedPhotos_${user.id}`, JSON.stringify(updatedLikedPhotos));
+      }
+
+      setIsLiked(newIsLiked);
+      console.log(`좋아요 ${newIsLiked ? '추가' : '취소'}되었습니다!`);
+    } else {
+      console.error("사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다.");
+    }
   };
 
   const handleShareClick = () => {
@@ -97,9 +175,39 @@ const PostModal: React.FC<PostModalProps> = ({
 
   const handleDeleteClick = () => {
     if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
-      console.log("Post deleted!");
-      onClose(); // 예시: 삭제 후 모달 닫기
+      if (photoId) {
+        deletePhoto(photoId);
+        console.log("게시물이 삭제되었습니다!");
+        onClose(); // 삭제 후 모달 닫기
+      } else {
+        console.error("사진 ID가 없어 삭제할 수 없습니다.");
+      }
     }
+  };
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+  };
+
+  const handleSaveClick = () => {
+    if (photoId) {
+      updatePhoto(photoId, {
+        location: editedLocation,
+        title: editedLocation, // title도 location과 동일하게 업데이트
+        description: editedDescription, // 설명도 업데이트
+      });
+      console.log("게시물이 수정되었습니다!");
+      setIsEditMode(false);
+    } else {
+      console.error("사진 ID가 없어 수정할 수 없습니다.");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    // 편집 취소 시 원래 값으로 되돌리기
+    setEditedLocation(locationLabel || "위치 정보 없음");
+    setEditedDescription(descriptionText || "");
+    setIsEditMode(false);
   };
 
   const handleCommentChange = (e: {
@@ -113,7 +221,11 @@ const PostModal: React.FC<PostModalProps> = ({
     if (!newComment.trim()) return;
     setComments((prev) => [
       ...prev,
-      { id: prev.length + 1, author: "Newbie", text: newComment.trim() },
+      {
+        id: prev.length + 1,
+        author: user?.username || "익명",
+        text: newComment.trim()
+      },
     ]);
     setNewComment("");
   };
@@ -149,13 +261,16 @@ const PostModal: React.FC<PostModalProps> = ({
               <Avatar size="sm" />
               <span className="font-semibold text-gray-800">{authorName}</span>
             </div>
-            <Button
-              variant={isFollowing ? "secondary" : "primary"}
-              size="sm"
-              onClick={handleFollowClick}
-            >
-              {isFollowing ? "Following" : "Follow"}
-            </Button>
+            {/* Follow 버튼: 로그인한 상태이고 작성자가 본인이 아닐 때만 표시 */}
+            {isLoggedIn && user?.id !== authorId && (
+              <Button
+                variant={isUserFollowing ? "secondary" : "primary"}
+                size="sm"
+                onClick={handleFollowClick}
+              >
+                {isUserFollowing ? "Following" : "Follow"}
+              </Button>
+            )}
           </div>
 
           {/* --- 이미지 --- */}
@@ -215,30 +330,108 @@ const PostModal: React.FC<PostModalProps> = ({
                 />
               </button>
             </div>
-            <div className="pr-3">
-              <button
-                onClick={handleDeleteClick}
-                className="p-3"
-                aria-label="Delete post"
-              >
-                <Trash2
-                  className="w-5 h-5 text-gray-700 transition-transform duration-200 ease-in-out cursor-pointer hover:scale-110"
-                  strokeWidth={2}
-                />
-              </button>
-            </div>
+            {/* 편집/삭제 아이콘: 로그인한 사용자가 작성자인 경우에만 표시 */}
+            {isLoggedIn && user?.id === authorId && (
+              <div className="flex pr-3">
+                {isEditMode ? (
+                  <>
+                    <button
+                      onClick={handleSaveClick}
+                      className="p-3"
+                      aria-label="Save changes"
+                    >
+                      <Save
+                        className="w-5 h-5 text-green-600 transition-transform duration-200 ease-in-out cursor-pointer hover:scale-110"
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      className="p-3"
+                      aria-label="Cancel edit"
+                    >
+                      <X
+                        className="w-5 h-5 text-gray-600 transition-transform duration-200 ease-in-out cursor-pointer hover:scale-110"
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={handleEditClick}
+                      className="p-3"
+                      aria-label="Edit post"
+                    >
+                      <Edit3
+                        className="w-5 h-5 text-gray-700 transition-transform duration-200 ease-in-out cursor-pointer hover:scale-110"
+                        strokeWidth={2}
+                      />
+                    </button>
+                    <button
+                      onClick={handleDeleteClick}
+                      className="p-3"
+                      aria-label="Delete post"
+                    >
+                      <Trash2
+                        className="w-5 h-5 text-gray-700 transition-transform duration-200 ease-in-out cursor-pointer hover:scale-110"
+                        strokeWidth={2}
+                      />
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* --- 컨텐츠 --- */}
           <div className="px-4 pb-4 space-y-3 text-left border-t border-gray-200">
             <div className="flex items-center gap-2 pt-4">
               <MapPin className="flex-shrink-0 w-5 h-5 text-gray-500" />
-              <p className="text-sm text-gray-600">{locationLabel}</p>
+              {isEditMode ? (
+                <input
+                  type="text"
+                  value={editedLocation}
+                  onChange={(e) => setEditedLocation(e.target.value)}
+                  className="flex-1 text-sm text-gray-600 bg-transparent border-b border-gray-300 focus:border-blue-500 focus:outline-none"
+                  placeholder="위치를 입력하세요"
+                />
+              ) : (
+                <div className="flex items-center gap-1">
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editedLocation || locationLabel || "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors flex items-center gap-1"
+                    onClick={(e) => {
+                      // 위치 정보가 없으면 링크 클릭 방지
+                      if (!editedLocation && !locationLabel) {
+                        e.preventDefault();
+                      }
+                    }}
+                    title="Google Maps에서 위치 보기"
+                  >
+                    {editedLocation || locationLabel || "위치 정보 없음"}
+                    {(editedLocation || locationLabel) && (
+                      <ExternalLink className="w-3 h-3 opacity-60" />
+                    )}
+                  </a>
+                </div>
+              )}
             </div>
-            <p className="pt-2 text-gray-800 ">
-              Lorem Ipsum is simply dummy text of the printing and typesetting
-              industry.
-            </p>
+            {isEditMode ? (
+              <textarea
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                className="w-full pt-2 text-gray-800 bg-transparent border border-gray-300 rounded-md resize-none focus:border-blue-500 focus:outline-none"
+                rows={3}
+                placeholder="설명을 입력하세요"
+              />
+            ) : (
+              <p className="pt-2 text-gray-800">
+                {editedDescription || descriptionText || "설명이 없습니다."}
+              </p>
+            )}
             <p className="text-sm text-blue-600">
               #Spiderman: Far from Home #Marvel
             </p>

@@ -14,7 +14,11 @@ export interface UserPhoto {
   alt: string;
   title: string;
   location: string;
+  description?: string; // 설명 추가
   likes: number;
+  likedBy?: string[]; // 좋아요 누른 사용자 ID 목록
+  authorId?: string; // 작성자 ID 추가
+  authorName?: string; // 작성자 이름 추가
   uploadDate: string;
   movieId?: number; // 관련 영화 ID
 }
@@ -37,6 +41,7 @@ export interface UserProfile {
   photos: UserPhoto[];
   watchedMovies: WatchedMovie[];
   bookmarkedMovies: number[]; // 북마크한 영화 ID 배열
+  following?: string[]; // 팔로우 중인 사용자 ID 목록
 }
 
 interface AuthContextType {
@@ -48,12 +53,20 @@ interface AuthContextType {
   logout: () => void;
   isAdmin: boolean;
   addPhoto: (photo: UserPhoto) => void;
+  updatePhoto: (photoId: string, updatedPhoto: Partial<UserPhoto>) => void;
+  deletePhoto: (photoId: string) => void;
+  togglePhotoLike: (photoId: string) => void;
+  isPhotoLiked: (photoId: string) => boolean;
+  toggleFollow: (userId: string) => void;
+  isFollowing: (userId: string) => boolean;
   addWatchedMovie: (movieId: number, rating?: number, review?: string) => void;
   toggleBookmark: (movieId: number) => void;
   isBookmarked: (movieId: number) => boolean;
   // 페이지에서 사용할 준비된 데이터
   userPhotosForGallery: any[];
+  userPhotosForProfile: any[];
   userMoviesForGallery: any[];
+  userMoviesForProfile: any[];
   userBookmarksForGallery: any[];
 }
 
@@ -90,6 +103,9 @@ const createExampleUserData = (): UserProfile => {
         title: "인셉션 촬영지",
         location: "도쿄, 일본",
         likes: 156,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
         uploadDate: "2024-01-15",
         movieId: 27205,
       },
@@ -100,6 +116,9 @@ const createExampleUserData = (): UserProfile => {
         title: "어벤져스 촬영지",
         location: "뉴욕, 미국",
         likes: 234,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
         uploadDate: "2024-01-20",
         movieId: 24428,
       },
@@ -110,6 +129,9 @@ const createExampleUserData = (): UserProfile => {
         title: "해리포터 촬영지",
         location: "런던, 영국",
         likes: 189,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
         uploadDate: "2024-01-25",
         movieId: 671,
       },
@@ -139,8 +161,75 @@ const createExampleUserData = (): UserProfile => {
         rating: 5,
         review: "히스 레저의 연기가 압권이었습니다.",
       },
+      {
+        movieId: 13, // 포레스트 검프
+        watchedAt: "2024-02-01",
+        rating: 5,
+        review: "인생은 초콜릿 상자와 같아요.",
+      },
+      {
+        movieId: 680, // 펄프 픽션
+        watchedAt: "2024-02-05",
+        rating: 4,
+        review: "타란티노의 걸작!",
+      },
+      {
+        movieId: 278, // 쇼생크 탈출
+        watchedAt: "2024-02-10",
+        rating: 5,
+        review: "희망에 관한 최고의 영화.",
+      },
+      {
+        movieId: 238, // 대부
+        watchedAt: "2024-02-15",
+        rating: 5,
+        review: "거절할 수 없는 제안.",
+      },
+      {
+        movieId: 424, // 쉰들러 리스트
+        watchedAt: "2024-02-20",
+        rating: 5,
+        review: "인간의 선함에 대한 증명.",
+      },
+      {
+        movieId: 240, // 대부 2
+        watchedAt: "2024-02-25",
+        rating: 4,
+        review: "1편 못지않은 걸작.",
+      },
+      {
+        movieId: 389, // 12명의 성난 사람들
+        watchedAt: "2024-03-01",
+        rating: 4,
+        review: "법정 드라마의 고전.",
+      },
+      {
+        movieId: 129, // 센과 치히로의 행방불명
+        watchedAt: "2024-03-05",
+        rating: 5,
+        review: "지브리의 최고작.",
+      },
+      {
+        movieId: 19404, // 딜레마
+        watchedAt: "2024-03-10",
+        rating: 3,
+        review: "괜찮은 스릴러.",
+      },
+      {
+        movieId: 497, // 그린 마일
+        watchedAt: "2024-03-15",
+        rating: 5,
+        review: "눈물 없이 볼 수 없는 명작.",
+      },
+      {
+        movieId: 637, // 인생은 아름다워
+        watchedAt: "2024-03-20",
+        rating: 5,
+        review: "사랑과 희망의 이야기.",
+      },
     ],
     bookmarkedMovies: [27205, 155, 13, 680], // 인셉션, 다크나이트, 포레스트 검프, 터미네이터
+    following: [], // 팔로우 목록 초기화
   };
 };
 
@@ -160,6 +249,9 @@ const createExampleAdminData = (): UserProfile => {
         title: "뉴질랜드 촬영지",
         location: "뉴질랜드, 웰링턴",
         likes: 1250,
+        likedBy: [],
+        authorId: "admin-001",
+        authorName: "Admin",
         uploadDate: "2024-01-10",
         movieId: 19995,
       },
@@ -170,6 +262,9 @@ const createExampleAdminData = (): UserProfile => {
         title: "호비튼 마을",
         location: "뉴질랜드, 호비튼",
         likes: 2100,
+        likedBy: [],
+        authorId: "admin-001",
+        authorName: "Admin",
         uploadDate: "2024-01-12",
         movieId: 120,
       },
@@ -180,6 +275,9 @@ const createExampleAdminData = (): UserProfile => {
         title: "사막 풍경",
         location: "튀니지, 타투인",
         likes: 1800,
+        likedBy: [],
+        authorId: "admin-001",
+        authorName: "Admin",
         uploadDate: "2024-01-15",
         movieId: 11,
       },
@@ -190,6 +288,9 @@ const createExampleAdminData = (): UserProfile => {
         title: "바다 전망",
         location: "멕시코, 로스알카트라세스",
         likes: 1650,
+        likedBy: [],
+        authorId: "admin-001",
+        authorName: "Admin",
         uploadDate: "2024-01-18",
         movieId: 597,
       },
@@ -200,6 +301,9 @@ const createExampleAdminData = (): UserProfile => {
         title: "도시 전경",
         location: "호주, 시드니",
         likes: 1950,
+        likedBy: [],
+        authorId: "admin-001",
+        authorName: "Admin",
         uploadDate: "2024-01-20",
         movieId: 603,
       },
@@ -249,6 +353,7 @@ const createExampleAdminData = (): UserProfile => {
       },
     ],
     bookmarkedMovies: [19995, 120, 11, 597, 603, 13, 680, 27205, 155], // 더 많은 북마크
+    following: ["1"], // Admin이 일반 사용자를 팔로우하는 예시
   };
 };
 
@@ -280,19 +385,55 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       155: "qJ2tW6WMUDux911r6m7haRef0WH.jpg", // 다크 나이트
       24428: "RYMX2wcKCBAr24UyPD7xwmjaTn.jpg", // 어벤져스
       671: "wuMc08IPKEatf9rnMNXvIDxqP4W.jpg", // 해리포터
+      278: "q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg", // 쇼생크 탈출
+      238: "3bhkrj58Vtu7enYsRolD1fZdja1.jpg", // 대부
+      424: "sF1U4EUQS8YHUYjNl3pMGNIUvaf.jpg", // 쉰들러 리스트
+      240: "hek3koDUyRQk7FIhPXsa6mAaNhQ.jpg", // 대부 2
+      389: "ppd84D2i9W8jJmsjo0t42DIbVKU.jpg", // 12명의 성난 사람들
+      129: "39wmItIWsg5sZMyRUHLkWBcuVCM.jpg", // 센과 치히로의 행방불명
+      19404: "bOGkgRGdhrBYJSLpXaxhXVstddV.jpg", // 딜레마
+      497: "velWPhVMQeQKcxggNEU8YmIo52R.jpg", // 그린 마일
+      637: "mfnkSyWBwq3dEOZqvJkmqSbyb9q.jpg", // 인생은 아름다워
     };
     return posterPaths[movieId] || "no-poster.jpg";
   };
 
-  // 갤러리용 데이터 준비
+  // 갤러리용 데이터 준비 (전체 사진)
   const userPhotosForGallery = user?.photos?.map((photo) => ({
     id: photo.id,
     src: photo.src,
     alt: photo.alt,
     likes: photo.likes,
+    // PostModal에서 사용할 추가 정보 포함
+    authorId: photo.authorId,
+    authorName: photo.authorName,
+    location: photo.location,
+    description: photo.description,
   })) || [];
 
+  // 프로필용 데이터 준비 (최대 8개까지만 표시)
+  const userPhotosForProfile = user?.photos?.slice(0, 8).map((photo) => ({
+    id: photo.id,
+    src: photo.src,
+    alt: photo.alt,
+    likes: photo.likes,
+    // PostModal에서 사용할 추가 정보 포함
+    authorId: photo.authorId,
+    authorName: photo.authorName,
+    location: photo.location,
+    description: photo.description,
+  })) || [];
+
+  // 갤러리용 영화 데이터 (전체)
   const userMoviesForGallery = user?.watchedMovies?.map((watched) => ({
+    id: watched.movieId.toString(),
+    src: `https://image.tmdb.org/t/p/w300/${getMoviePosterPath(watched.movieId)}`,
+    alt: `Movie ${watched.movieId}`,
+    movieId: watched.movieId,
+  })) || [];
+
+  // 프로필용 영화 데이터 (최대 8개)
+  const userMoviesForProfile = user?.watchedMovies?.slice(0, 8).map((watched) => ({
     id: watched.movieId.toString(),
     src: `https://image.tmdb.org/t/p/w300/${getMoviePosterPath(watched.movieId)}`,
     alt: `Movie ${watched.movieId}`,
@@ -360,7 +501,110 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       photos: [...user.photos, photo],
     };
     setUser(updatedUser);
+
+    try {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('localStorage 용량 초과로 인해 데이터를 저장할 수 없습니다.');
+        alert('저장 공간이 부족합니다. 일부 사진을 삭제한 후 다시 시도해주세요.');
+        // 사용자 상태는 메모리에만 유지하고 localStorage는 실패
+      } else {
+        console.error('사진 저장 중 오류 발생:', error);
+      }
+    }
+  };
+
+  const updatePhoto = (photoId: string, updatedPhoto: Partial<UserPhoto>) => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      photos: user.photos.map(photo =>
+        photo.id === photoId
+          ? { ...photo, ...updatedPhoto }
+          : photo
+      ),
+    };
+    setUser(updatedUser);
+
+    try {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('localStorage 용량 초과로 인해 데이터를 저장할 수 없습니다.');
+      } else {
+        console.error('사진 업데이트 중 오류 발생:', error);
+      }
+    }
+  };
+
+  const deletePhoto = (photoId: string) => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      photos: user.photos.filter(photo => photo.id !== photoId),
+    };
+    setUser(updatedUser);
+
+    try {
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+        console.warn('localStorage 용량 초과로 인해 데이터를 저장할 수 없습니다.');
+      } else {
+        console.error('사진 삭제 중 오류 발생:', error);
+      }
+    }
+  };
+
+  const togglePhotoLike = (photoId: string) => {
+    if (!user) return;
+    const updatedUser = {
+      ...user,
+      photos: user.photos.map(photo => {
+        if (photo.id === photoId) {
+          const likedBy = photo.likedBy || [];
+          const isCurrentlyLiked = likedBy.includes(user.id);
+
+          return {
+            ...photo,
+            likes: isCurrentlyLiked ? photo.likes - 1 : photo.likes + 1,
+            likedBy: isCurrentlyLiked
+              ? likedBy.filter(userId => userId !== user.id)
+              : [...likedBy, user.id]
+          };
+        }
+        return photo;
+      }),
+    };
+    setUser(updatedUser);
     localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
+  const isPhotoLiked = (photoId: string): boolean => {
+    if (!user) return false;
+    const photo = user.photos.find(p => p.id === photoId);
+    return photo?.likedBy?.includes(user.id) || false;
+  };
+
+  const toggleFollow = (userId: string) => {
+    if (!user) return;
+    const following = user.following || [];
+    const isCurrentlyFollowing = following.includes(userId);
+
+    const updatedUser = {
+      ...user,
+      following: isCurrentlyFollowing
+        ? following.filter(id => id !== userId)
+        : [...following, userId]
+    };
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
+  const isFollowing = (userId: string): boolean => {
+    if (!user) return false;
+    return user.following?.includes(userId) || false;
   };
 
   const addWatchedMovie = (
@@ -411,11 +655,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isAdmin: user?.role === "admin",
     addPhoto,
+    updatePhoto,
+    deletePhoto,
+    togglePhotoLike,
+    isPhotoLiked,
+    toggleFollow,
+    isFollowing,
     addWatchedMovie,
     toggleBookmark,
     isBookmarked,
     userPhotosForGallery,
+    userPhotosForProfile,
     userMoviesForGallery,
+    userMoviesForProfile,
     userBookmarksForGallery,
   };
 
