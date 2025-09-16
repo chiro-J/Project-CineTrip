@@ -169,6 +169,32 @@ const Home = () => {
     setSelectedItem(null);
   };
 
+  // Mock 데이터 함수 (Home 페이지용)
+  const getHomeMockPhotoData = (item: ImageItem) => {
+    // Home 페이지의 임시 이미지들을 다양한 사용자의 게시물로 설정
+    const authors = [
+      { id: "1", name: "cinephile_user" },
+      { id: "admin-001", name: "Admin" },
+      { id: "user-2", name: "movie_lover" },
+      { id: "user-3", name: "photo_traveler" }
+    ];
+
+    // ID를 기반으로 작성자를 결정 (일관성 있게)
+    const authorIndex = typeof item.id === 'string'
+      ? parseInt(item.id.split('-')[1] || '0') % authors.length
+      : (item.id as number) % authors.length;
+
+    const author = authors[authorIndex];
+
+    return {
+      id: item.id.toString(),
+      authorId: author.id,
+      authorName: author.name,
+      location: "아름다운 여행지",
+      description: "멋진 사진입니다!",
+    };
+  };
+
   const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const img = target.closest("img") as HTMLImageElement | null;
@@ -228,7 +254,18 @@ const Home = () => {
         </button>
       )}
 
-      {selectedItem && <PostModal item={selectedItem} onClose={closeModal} />}
+      {selectedItem && (
+        <PostModal
+          key={`${selectedItem.id}-${getHomeMockPhotoData(selectedItem).location}-${getHomeMockPhotoData(selectedItem).description}`}
+          item={selectedItem}
+          onClose={closeModal}
+          authorId={getHomeMockPhotoData(selectedItem).authorId}
+          authorName={getHomeMockPhotoData(selectedItem).authorName}
+          photoId={getHomeMockPhotoData(selectedItem).id}
+          locationLabel={getHomeMockPhotoData(selectedItem).location}
+          descriptionText={getHomeMockPhotoData(selectedItem).description}
+        />
+      )}
 
 
       {/* 로그인 모달 */}

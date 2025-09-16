@@ -1,5 +1,6 @@
+// index.tsx (MovieSearchMain)
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { GridLayout } from "../../components/layout/ImageContainer";
 
@@ -15,6 +16,8 @@ import {
 // 메인 컴포넌트
 const MovieSearchMain = () => {
   const navigate = useNavigate();
+  const [sp] = useSearchParams();
+
   const [activeFilter, setActiveFilter] = useState("latest");
   const [searchQuery, setSearchQuery] = useState("");
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -52,15 +55,39 @@ const MovieSearchMain = () => {
     }
   };
 
-  // 페이지 로드 시 초기 데이터 로드
+  // 페이지 로드 시: URL ?q=가 있으면 그걸로 자동 검색, 없으면 기본 목록
   useEffect(() => {
-    loadMovies(activeFilter);
-  }, []);
+    const urlQ = (sp.get("q") ?? "").trim();
+    if (urlQ) {
+      setSearchQuery(urlQ);
+      // 기존 handleSearch 수정 없이 여기서 직접 검색 실행
+      (async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await tmdbService.searchMovies(urlQ);
+          setMovies(response.results);
+          const images = response.results.map(convertMovieToImage);
+          setMovieImages(images);
+        } catch (err) {
+          setError("영화 검색에 실패했습니다.");
+          console.error("Error searching movies:", err);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    } else {
+      loadMovies(activeFilter);
+    }
+  }, [sp]);
 
-  // 필터 변경 시 데이터 다시 로드
+  // 필터 변경 시: URL에 q가 없을 때만 동작(검색 결과 덮어쓰지 않도록)
   useEffect(() => {
-    loadMovies(activeFilter);
-  }, [activeFilter]);
+    const hasQ = !!(sp.get("q") ?? "").trim();
+    if (!hasQ) {
+      loadMovies(activeFilter);
+    }
+  }, [activeFilter, sp]);
 
   const handleFilterChange = (filterId: string) => {
     setActiveFilter(filterId);
@@ -143,7 +170,7 @@ const MovieSearchMain = () => {
       {loading && (
         <div className="flex items-center justify-center py-20">
           <div className="text-lg text-gray-600">
-            영화 데이터를 불러오는 중...
+            영화 데이터를 불러오는 중.
           </div>
         </div>
       )}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Camera, MapPin, Upload } from "lucide-react";
 import { Button } from "../ui/Button";
+import { useAuth, type UserPhoto } from "../../contexts/AuthContext";
 
 interface PostUploadModalProps {
   isOpen: boolean;
@@ -8,6 +9,32 @@ interface PostUploadModalProps {
 }
 
 const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) => {
+  const { addPhoto, user } = useAuth();
+
+  // 이미지 압축 함수
+  const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        // 비율 유지하면서 최대 너비 제한
+        const ratio = Math.min(maxWidth / img.width, maxWidth / img.height);
+        canvas.width = img.width * ratio;
+        canvas.height = img.height * ratio;
+
+        // 이미지 그리기
+        ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // 압축된 이미지를 base64로 변환
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
   // 모든 상태 변수들을 명확히 정의
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -87,26 +114,24 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        const img = new Image();
-        img.onload = () => {
-          // 이미지 비율 계산
-          const ratio = img.width / img.height;
-          if (ratio > 1.5) {
-            setImageAspectRatio("landscape");
-          } else if (ratio < 0.75) {
-            setImageAspectRatio("portrait");
-          } else {
-            setImageAspectRatio("square");
-          }
-        };
-        img.src = e.target.result as string;
-        setUploadedImage(e.target.result as string);
-      }
-    };
-    reader.readAsDataURL(file);
+    // 이미지 압축 후 업로드
+    compressImage(file).then((compressedDataUrl) => {
+      const img = new Image();
+      img.onload = () => {
+        // 이미지 비율 계산
+        const ratio = img.width / img.height;
+        if (ratio > 1.5) {
+          setImageAspectRatio("landscape");
+        } else if (ratio < 0.75) {
+          setImageAspectRatio("portrait");
+        } else {
+          setImageAspectRatio("square");
+        }
+      };
+      img.src = compressedDataUrl;
+      setUploadedImage(compressedDataUrl);
+      console.log(`원본 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB, 압축 후: ${(compressedDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)}MB`);
+    });
   };
 
   const handleContinue = () => {
@@ -129,14 +154,32 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
         setCurrentStep(3);
         setIsTransitioning(false);
       }, 150);
-    } else if (currentStep === 3 && location) {
+    } else if (currentStep === 3 && location && uploadedImage) {
       setIsUploading(true);
-      // 실제 업로드 로직을 시뮬레이션 (3초 후 완료)
+
+      // 새로운 사진 데이터 생성
+      const newPhoto: UserPhoto = {
+        id: `photo-${Date.now()}`, // 임시 ID 생성
+        src: uploadedImage,
+        alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
+        title: location,
+        location: tags || location,
+        description: description, // 설명 추가
+        likes: 0,
+        likedBy: [], // 좋아요 누른 사용자 목록 초기화
+        authorId: user?.id, // 현재 로그인한 사용자 ID
+        authorName: user?.username, // 현재 로그인한 사용자 이름
+        uploadDate: new Date().toISOString().split('T')[0],
+      };
+
+      // 실제 업로드 로직을 시뮬레이션 (2초 후 완료)
       setTimeout(() => {
-        console.log("게시물 업로드 완료!");
+        // AuthContext의 addPhoto 함수를 사용하여 사진 추가
+        addPhoto(newPhoto);
+        console.log("게시물 업로드 완료!", newPhoto);
         setIsUploading(false);
         closeModal();
-      }, 3000);
+      }, 2000);
     }
   };
 
@@ -162,6 +205,17 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
   };
 
   const closeModal = () => {
+    // 상태 초기화
+    setCurrentStep(1);
+    setSelectedType(null);
+    setUploadedImage(null);
+    setUploadError("");
+    setIsTransitioning(false);
+    setImageAspectRatio("landscape");
+    setIsUploading(false);
+    setDescription("");
+    setTags("");
+    setLocation("");
     onClose();
   };
 

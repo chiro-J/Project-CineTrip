@@ -8,7 +8,7 @@ import PostModal from "../../components/post/PostModal";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import Footer from "../../components/layout/Footer";
 import { type Item } from "../../types/common";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
 // --- 타입 정의 ---
@@ -21,7 +21,7 @@ type UserProfile = {
 };
 
 // --- Mock 데이터 ---
-const mockUsers: UserProfile[] = [
+const allMockUsers: UserProfile[] = [
   {
     id: 1,
     avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User1",
@@ -36,17 +36,50 @@ const mockUsers: UserProfile[] = [
     handle: "photo_master",
     bio: "세상을 사진으로 담아냅니다.",
   },
+  {
+    id: 3,
+    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User3",
+    username: "영화 덕후",
+    handle: "movie_lover",
+    bio: "영화를 사랑하는 사람입니다.",
+  },
+  {
+    id: 4,
+    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User4",
+    username: "여행가",
+    handle: "travel_enthusiast",
+    bio: "세계 여행을 꿈꾸는 모험가입니다.",
+  },
+  {
+    id: 5,
+    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User5",
+    username: "개발자 김철수",
+    handle: "dev_kim",
+    bio: "풀스택 개발자로 일하고 있습니다.",
+  },
 ];
 
-const fetchPosts = (page: number): Promise<Item[]> => {
+const searchUsers = (query: string): UserProfile[] => {
+  if (!query.trim()) return allMockUsers.slice(0, 2);
+
+  return allMockUsers.filter(user =>
+    user.username.toLowerCase().includes(query.toLowerCase()) ||
+    user.handle.toLowerCase().includes(query.toLowerCase()) ||
+    user.bio.toLowerCase().includes(query.toLowerCase())
+  );
+};
+
+const fetchPosts = (page: number, query?: string): Promise<Item[]> => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const newImages = Array.from({ length: 20 }, (_, i) => {
-        const id = (page - 1) * 20 + i;
+      const baseCount = query && query.trim() ? 8 + Math.floor(Math.random() * 12) : 20;
+      const newImages = Array.from({ length: baseCount }, (_, i) => {
+        const id = (page - 1) * baseCount + i;
+        const searchTerm = query ? query.trim() : "기본";
         return {
-          id: `post-${id + 1}`,
-          src: `https://placehold.co/400x400/CCCCCC/333333?text=Post+${id + 1}`,
-          alt: `검색된 게시물 ${id + 1}`,
+          id: `post-${searchTerm}-${id + 1}`,
+          src: `https://placehold.co/400x400/CCCCCC/333333?text=${encodeURIComponent(searchTerm)}+${id + 1}`,
+          alt: `"${searchTerm}" 검색 결과 게시물 ${id + 1}`,
           likes: Math.floor(Math.random() * 100),
         };
       });
@@ -56,17 +89,17 @@ const fetchPosts = (page: number): Promise<Item[]> => {
 };
 
 // --- 결과 컴포넌트들 ---
-const PostResults = () => {
+const PostResults = ({ searchQuery }: { searchQuery: string }) => {
   const [posts, setPosts] = useState<Item[]>([]);
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
   useEffect(() => {
     const getInitialPosts = async () => {
-      const initialPosts = await fetchPosts(1);
+      const initialPosts = await fetchPosts(1, searchQuery);
       setPosts(initialPosts);
     };
     getInitialPosts();
-  }, []);
+  }, [searchQuery]);
 
   const handleGridClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -92,7 +125,14 @@ const PostResults = () => {
   );
 };
 
-const UserResults = () => {
+const UserResults = ({ searchQuery }: { searchQuery: string }) => {
+  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
+
+  useEffect(() => {
+    const users = searchUsers(searchQuery);
+    setFilteredUsers(users);
+  }, [searchQuery]);
+
   const UserCard = ({ user }: { user: UserProfile }) => {
     const [isFollowing, setIsFollowing] = useState(false);
     return (
@@ -120,26 +160,38 @@ const UserResults = () => {
     <>
       <section className="mb-16">
         <h2 className="pb-3 mb-4 text-2xl font-bold text-gray-800 border-b-3">
-          사용자
+          사용자 ({filteredUsers.length}명)
         </h2>
         <div className="flex flex-col">
-          {mockUsers.map((user) => (
-            <UserCard key={user.id} user={user} />
-          ))}
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
+              <UserCard key={user.id} user={user} />
+            ))
+          ) : (
+            <p className="py-8 text-center text-gray-500">
+              "{searchQuery}" 검색어에 해당하는 사용자가 없습니다.
+            </p>
+          )}
         </div>
       </section>
-      <PostResults />
+      <PostResults searchQuery={searchQuery} />
     </>
   );
 };
 
 // --- 메인 검색 페이지 (사용자만 남김) ---
 const SearchResultPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const handleSearch = () => {
+    if (searchQuery.trim()) {
+      setSearchParams({ q: searchQuery.trim() });
+    } else {
+      setSearchParams({});
+    }
     console.log(`Searching users & posts for '${searchQuery}'...`);
   };
 
@@ -193,6 +245,7 @@ const SearchResultPage = () => {
             placeholder="검색어를 입력하세요..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <Button onClick={handleSearch} className="px-8" variant="primary">
@@ -203,7 +256,11 @@ const SearchResultPage = () => {
           <p className="mt-3 text-sm text-gray-500">
             영화를 검색하시나요?{" "}
             <Link
-              to="/movies"
+              to={
+                searchQuery
+                  ? `/movies?q=${encodeURIComponent(searchQuery)}`
+                  : "/movies"
+              }
               className="font-medium text-blue-600 hover:underline"
             >
               영화 검색으로 이동
@@ -214,7 +271,7 @@ const SearchResultPage = () => {
 
       {/* 탭 제거, 사용자 결과만 렌더 */}
       <div className="mt-8">
-        <UserResults />
+        <UserResults searchQuery={searchQuery} />
       </div>
 
       {showScrollButton && (

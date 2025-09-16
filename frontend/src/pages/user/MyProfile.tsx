@@ -20,7 +20,7 @@ import { getImageUrl } from "../../types/movie";
  */
 const UserProfilePage = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { user, userPhotosForGallery, userMoviesForGallery } = useAuth();
+  const { user, userPhotosForProfile, userMoviesForProfile } = useAuth();
 
   const handleEditProfileClick = (): void => {
     console.log("Edit Profile button clicked");
@@ -38,13 +38,65 @@ const UserProfilePage = (): React.ReactElement => {
 
   const [selectedImage, setSelectedImage] = useState<Item | null>(null);
 
+  // Mock 데이터 함수 (Gallery와 동일한 로직)
+  const getMockPhotoData = (itemId: string) => {
+    const mockData = {
+      "photo-1": {
+        id: "photo-1",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "도쿄, 일본",
+        description: "인셉션 촬영지입니다.",
+      },
+      "photo-2": {
+        id: "photo-2",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "뉴욕, 미국",
+        description: "어벤져스 촬영지입니다.",
+      },
+      "photo-3": {
+        id: "photo-3",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "런던, 영국",
+        description: "해리포터 촬영지입니다.",
+      },
+      "admin-photo-1": {
+        id: "admin-photo-1",
+        authorId: "admin-001",
+        authorName: "Admin",
+        location: "뉴질랜드, 웰링턴",
+        description: "아바타 촬영지입니다.",
+      },
+      "admin-photo-2": {
+        id: "admin-photo-2",
+        authorId: "admin-001",
+        authorName: "Admin",
+        location: "뉴질랜드, 호비튼",
+        description: "반지의 제왕 촬영지입니다.",
+      }
+    };
+
+    // Mock 데이터에 없으면 현재 로그인한 사용자의 새 게시물로 간주
+    return mockData[itemId as keyof typeof mockData] || {
+      id: itemId,
+      authorId: user?.id || "unknown",
+      authorName: user?.username || "사용자",
+      location: "새로 업로드된 위치",
+      description: "새로 업로드된 게시물입니다.",
+    };
+  };
+
+  const selectedPhotoData = selectedImage ? getMockPhotoData(selectedImage.id) : null;
+
   // 사진 클릭 핸들러
   const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const imgElement = target.closest("img");
 
     if (imgElement && imgElement.src) {
-      const foundImage = userPhotosForGallery.find(
+      const foundImage = userPhotosForProfile.find(
         (img) => img.src === imgElement.src
       );
       if (foundImage) {
@@ -59,7 +111,7 @@ const UserProfilePage = (): React.ReactElement => {
     const imgElement = target.closest("img");
 
     if (imgElement && imgElement.src) {
-      const foundMovie = userMoviesForGallery.find(
+      const foundMovie = userMoviesForProfile.find(
         (movie) => movie.src === imgElement.src
       );
       if (foundMovie && (foundMovie as any).movieId) {
@@ -119,7 +171,7 @@ const UserProfilePage = (): React.ReactElement => {
               </Button>
             </div>
             <div onClick={handleUserImageClick} className="cursor-pointer">
-              <GridLayout images={userPhotosForGallery} className="grid-cols-4" />
+              <GridLayout images={userPhotosForProfile} className="grid-cols-4" />
             </div>
           </section>
 
@@ -136,16 +188,22 @@ const UserProfilePage = (): React.ReactElement => {
               </Button>
             </div>
             <div onClick={handleMovieImageClick} className="cursor-pointer">
-              <GridLayout images={userMoviesForGallery} className="grid-cols-4" />
+              <GridLayout images={userMoviesForProfile} className="grid-cols-4" />
             </div>
           </section>
         </main>
       </div>
       {/* 4. selectedImage가 있을 때만 PostModal을 렌더링합니다. */}
-      {selectedImage && (
+      {selectedImage && selectedPhotoData && (
         <PostModal
+          key={`${selectedImage.id}-${selectedPhotoData.location}-${selectedPhotoData.description}`}
           item={selectedImage}
           onClose={() => setSelectedImage(null)} // 모달을 닫을 때 state를 null로 초기화합니다.
+          authorId={selectedPhotoData.authorId}
+          authorName={selectedPhotoData.authorName}
+          photoId={selectedPhotoData.id}
+          locationLabel={selectedPhotoData.location}
+          descriptionText={selectedPhotoData.description}
         />
       )}
     </div>
