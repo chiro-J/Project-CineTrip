@@ -11,6 +11,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
 import { useState } from "react";
+import { useEffect } from "react";
 import { tmdbService } from "../../services/tmdbService";
 import { getImageUrl } from "../../types/movie";
 
@@ -75,20 +76,24 @@ const UserProfilePage = (): React.ReactElement => {
         authorName: "Admin",
         location: "뉴질랜드, 호비튼",
         description: "반지의 제왕 촬영지입니다.",
-      }
+      },
     };
 
     // Mock 데이터에 없으면 현재 로그인한 사용자의 새 게시물로 간주
-    return mockData[itemId as keyof typeof mockData] || {
-      id: itemId,
-      authorId: user?.id || "unknown",
-      authorName: user?.username || "사용자",
-      location: "새로 업로드된 위치",
-      description: "새로 업로드된 게시물입니다.",
-    };
+    return (
+      mockData[itemId as keyof typeof mockData] || {
+        id: itemId,
+        authorId: user?.id || "unknown",
+        authorName: user?.username || "사용자",
+        location: "새로 업로드된 위치",
+        description: "새로 업로드된 게시물입니다.",
+      }
+    );
   };
 
-  const selectedPhotoData = selectedImage ? getMockPhotoData(selectedImage.id) : null;
+  const selectedPhotoData = selectedImage
+    ? getMockPhotoData(String(selectedImage.id))
+    : null;
 
   // 사진 클릭 핸들러
   const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -119,6 +124,45 @@ const UserProfilePage = (): React.ReactElement => {
       }
     }
   };
+
+  /**
+   * 데이터가 없을 때 표시할 UI 컴포넌트
+   */
+  const EmptyState: React.FC<{
+    message: string;
+  }> = ({ message }) => (
+    <div className="min-h-[200px] flex flex-col items-center justify-center rounded-lg">
+      <svg
+        className="w-12 h-12 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+        />
+      </svg>
+      <p className="mt-4 text-base font-medium text-gray-500">{message}</p>
+    </div>
+  );
+
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+
+    const prevWidth = root.style.width;
+    const prevMaxWidth = root.style.maxWidth;
+    root.style.width = "1280px"; // 고정 폭
+    root.style.maxWidth = "none"; // 기존 max-width 영향 차단(선택)
+    return () => {
+      root.style.width = prevWidth;
+      root.style.maxWidth = prevMaxWidth;
+    };
+  }, []);
 
   return (
     <div className="flex font-sans bg-white max-w-screen">
@@ -171,7 +215,14 @@ const UserProfilePage = (): React.ReactElement => {
               </Button>
             </div>
             <div onClick={handleUserImageClick} className="cursor-pointer">
-              <GridLayout images={userPhotosForProfile} className="grid-cols-4" />
+              {userPhotosForProfile.length > 0 ? (
+                <GridLayout
+                  images={userPhotosForProfile}
+                  className="grid-cols-4"
+                />
+              ) : (
+                <EmptyState message="올린 사진이 없습니다." />
+              )}
             </div>
           </section>
 
@@ -188,7 +239,14 @@ const UserProfilePage = (): React.ReactElement => {
               </Button>
             </div>
             <div onClick={handleMovieImageClick} className="cursor-pointer">
-              <GridLayout images={userMoviesForProfile} className="grid-cols-4" />
+              {userMoviesForProfile.length > 0 ? (
+                <GridLayout
+                  images={userMoviesForProfile}
+                  className="grid-cols-4"
+                />
+              ) : (
+                <EmptyState message="감상한 영화가 없습니다." />
+              )}
             </div>
           </section>
         </main>
