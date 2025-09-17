@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { LocationsController } from './locations.controller';
-import { LocationsService } from './locations.service';
+import { SceneLocationsService } from './locations.service';
+import { LlmModule } from '../llm/llm.module';
+import { TypeOrmService } from '../database/typeorm.service';
+import { SceneLocation } from '../entities/scene-location.entity';
 
 @Module({
+  imports: [LlmModule, TypeOrmModule.forFeature([SceneLocation])],
   controllers: [LocationsController],
-  providers: [LocationsService]
+  providers: [SceneLocationsService, TypeOrmService],
 })
 export class LocationsModule {}

@@ -13,6 +13,10 @@ export interface Movie {
   adult: boolean;
   video: boolean;
   original_language: string;
+  production_countries?: Array<{
+    iso_3166_1: string;
+    name: string;
+  }>;
 }
 
 export interface MovieListResponse {

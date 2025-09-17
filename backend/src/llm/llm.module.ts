@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { LlmController } from './llm.controller';
 import { LlmService } from './llm.service';
-import { ChecklistModule } from './checklist.module';
-import { RecommendationsModule } from './recommendations.module';
+import { SceneLocationsService } from '../locations/locations.service';
+import { TypeOrmService } from '../database/typeorm.service';
+import { SceneLocation } from '../entities/scene-location.entity';
 
 @Module({
-  imports: [ChecklistModule, RecommendationsModule],
+  imports: [TypeOrmModule.forFeature([SceneLocation])],
   controllers: [LlmController],
-  providers: [LlmService],
+  providers: [LlmService, SceneLocationsService, TypeOrmService],
   exports: [LlmService],
 })
 export class LlmModule {}
