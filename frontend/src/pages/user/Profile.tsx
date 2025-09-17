@@ -58,6 +58,31 @@ const recommendedPlaces = [
 ];
 
 /**
+ * 데이터가 없을 때 표시할 UI 컴포넌트
+ */
+const EmptyState: React.FC<{
+  message: string;
+}> = ({ message }) => (
+  <div className="min-h-[200px] flex flex-col items-center justify-center rounded-lg">
+    <svg
+      className="w-12 h-12 text-gray-400"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"
+      />
+    </svg>
+    <p className="mt-4 text-base font-medium text-gray-500">{message}</p>
+  </div>
+);
+
+/**
  * 사용자 프로필 페이지 컴포넌트
  */
 const Profile = () => {
@@ -125,7 +150,9 @@ const Profile = () => {
               />
               <div className="ml-6">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-2xl font-bold">{user?.username || "사용자 이름"}</h2>
+                  <h2 className="text-2xl font-bold">
+                    {user?.username || "사용자 이름"}
+                  </h2>
                   <svg
                     className="w-4 h-4 text-gray-400"
                     fill="none"
@@ -234,7 +261,16 @@ const Profile = () => {
               </Button>
             </div>
             <div onClick={handleUserImageClick} className="cursor-pointer">
-              <GridLayout images={MOCK_GRID_IMAGES1} className="grid-cols-3" />
+              {MOCK_GRID_IMAGES1.length > 0 ? (
+                <GridLayout
+                  images={MOCK_GRID_IMAGES1}
+                  className="grid-cols-3"
+                />
+              ) : (
+                <EmptyState
+                  message={`${user?.username}님이 업로드한 사진이 없습니다.`}
+                />
+              )}
             </div>
           </section>
 
@@ -247,7 +283,13 @@ const Profile = () => {
                 more
               </Button>
             </div>
-            <GridLayout images={MOCK_GRID_IMAGES2} className="grid-cols-5" />
+            {MOCK_GRID_IMAGES2.length > 0 ? (
+              <GridLayout images={MOCK_GRID_IMAGES2} className="grid-cols-5" />
+            ) : (
+              <EmptyState
+                message={`${user?.username}님이 감상한 영화가 없습니다.`}
+              />
+            )}
           </section>
         </div>
         {/* 4. selectedImage가 있을 때만 PostModal을 렌더링합니다. */}
