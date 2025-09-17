@@ -39,7 +39,7 @@ export class LikesService {
 
     return {
       likeId: savedLike.id,
-      likesCount: updatedPost.likesCount,
+      likesCount: updatedPost?.likesCount || 0,
     };
   }
 
@@ -81,7 +81,7 @@ export class LikesService {
       const updatedPost = await this.postRepository.findOne({ where: { id: postId } });
       return {
         isLiked: false,
-        likesCount: updatedPost.likesCount,
+        likesCount: updatedPost?.likesCount || 0,
       };
     } else {
       const like = this.likeRepository.create({ postId, userId });
@@ -93,7 +93,7 @@ export class LikesService {
       const updatedPost = await this.postRepository.findOne({ where: { id: postId } });
       return {
         isLiked: true,
-        likesCount: updatedPost.likesCount,
+        likesCount: updatedPost?.likesCount || 0,
       };
     }
   }

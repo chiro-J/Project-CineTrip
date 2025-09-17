@@ -45,7 +45,7 @@ export class FollowService {
       const updatedUser = await this.userRepository.findOne({ where: { id: followingId } });
       return {
         isFollowing: false,
-        followersCount: updatedUser.followersCount,
+        followersCount: updatedUser?.followersCount || 0,
       };
     } else {
       const follow = this.followRepository.create({ followerId, followingId });
@@ -61,7 +61,7 @@ export class FollowService {
       const updatedUser = await this.userRepository.findOne({ where: { id: followingId } });
       return {
         isFollowing: true,
-        followersCount: updatedUser.followersCount,
+        followersCount: updatedUser?.followersCount || 0,
       };
     }
   }
