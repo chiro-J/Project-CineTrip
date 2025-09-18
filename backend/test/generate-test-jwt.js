@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 
 // 테스트용 사용자 정보
 const testUser = {
+  sub: 'test-user-id-123',
   id: 'test-user-id-123',
   email: 'test@example.com',
   username: 'testuser'

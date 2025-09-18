@@ -3,6 +3,7 @@ import { Post } from '../../posts/entities/post.entity';
 import { Like } from '../../posts/likes/entities/like.entity';
 import { Comment } from '../../posts/comments/entities/comment.entity';
 import { Follow } from '../follow/entities/follow.entity';
+import { Bookmark } from '../../movies/bookmarks/entities/bookmark.entity';
 
 @Entity('users')
 export class User {
@@ -44,6 +45,9 @@ export class User {
 
   @OneToMany(() => Follow, follow => follow.following)
   followers: Follow[];
+
+  @OneToMany(() => Bookmark, bookmark => bookmark.user)
+  bookmarks: Bookmark[];
 
   @CreateDateColumn()
   createdAt: Date;

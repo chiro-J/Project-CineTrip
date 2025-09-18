@@ -16,7 +16,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { PostResponseDto } from './dto/post-response.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
-@Controller('api/posts')
+@Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
@@ -34,13 +34,6 @@ export class PostsController {
     return this.postsService.findAll(userId);
   }
 
-  @Get('user/:authorId')
-  async findByAuthor(
-    @Param('authorId') authorId: string,
-    @Query('userId') userId?: string,
-  ): Promise<PostResponseDto[]> {
-    return this.postsService.findByAuthor(authorId, userId);
-  }
 
   @Get(':postId')
   async findOne(

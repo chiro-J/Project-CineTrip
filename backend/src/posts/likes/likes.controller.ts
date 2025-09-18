@@ -9,7 +9,7 @@ import {
 import { LikesService } from './likes.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
-@Controller('api/posts')
+@Controller('posts')
 export class LikesController {
   constructor(private readonly likesService: LikesService) {}
 
