@@ -13,7 +13,7 @@ import { CreateCommentDto } from './dto/create-comment.dto';
 import { CommentResponseDto } from './dto/comment-response.dto';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
-@Controller('api/posts')
+@Controller('posts')
 export class CommentsController {
   constructor(private readonly commentsService: CommentsService) {}
 
