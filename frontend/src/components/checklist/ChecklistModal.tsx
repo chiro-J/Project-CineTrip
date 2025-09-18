@@ -8,6 +8,7 @@ import type { FC } from "react";
 import type { NewChecklistDataType } from "../../types/checklist";
 import { CloseIcon } from "./ChecklistPage";
 import { Button } from "../ui/Button";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * 체크리스트 생성 모달 컴포넌트
@@ -16,13 +17,14 @@ const CreateChecklistModal: FC<{
   isOpen: boolean;
   onClose: () => void;
   onCreate: (data: NewChecklistDataType) => void;
-  movies: string[];
-  locations: { [key: string]: string[] };
-}> = ({ isOpen, onClose, onCreate, movies, locations }) => {
-  const [selectedMovie, setSelectedMovie] = useState<string | null>(null);
+}> = ({ isOpen, onClose, onCreate }) => {
+  const { userBookmarksForGallery } = useAuth();
+  const [selectedMovie, setSelectedMovie] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [sceneLocations, setSceneLocations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   // 모달 스크롤 락
   useEffect(() => {
@@ -35,14 +37,44 @@ const CreateChecklistModal: FC<{
     }
   }, [isOpen]);
 
+  // 영화 선택 시 촬영지 로드
+  useEffect(() => {
+    if (selectedMovie) {
+      const loadSceneLocations = async () => {
+        setLoading(true);
+        try {
+          // 선택된 영화 정보 가져오기
+          const selectedMovieData = userBookmarksForGallery.find(
+            (movie) => movie.tmdbId.toString() === selectedMovie
+          );
+
+          // 쿼리 파라미터 구성
+          const params = new URLSearchParams();
+          if (selectedMovieData?.movieTitle) {
+            params.set("title", selectedMovieData.movieTitle);
+          }
+
+          const response = await fetch(
+            `http://localhost:3000/llm/prompt/scene/${selectedMovie}?${params}`
+          );
+          const data = await response.json();
+          setSceneLocations(data.items || []);
+        } catch (error) {
+          console.error("촬영지 로드 실패:", error);
+          setSceneLocations([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadSceneLocations();
+    } else {
+      setSceneLocations([]);
+    }
+  }, [selectedMovie, userBookmarksForGallery]);
+
   if (!isOpen) {
     return null;
   }
-
-  const handleSelectMovie = (movie: string) => {
-    setSelectedMovie((prev) => (prev === movie ? null : movie));
-    setSelectedLocation("");
-  };
 
   const handleCreate = () => {
     // 유효성 검사
@@ -58,8 +90,14 @@ const CreateChecklistModal: FC<{
       alert("여행 기간을 선택해주세요.");
       return;
     }
+
+    const selectedMovieData = userBookmarksForGallery.find(
+      (movie) => movie.tmdbId.toString() === selectedMovie
+    );
+    const movieTitle = selectedMovieData?.movieTitle || "영화 촬영지";
+
     onCreate({
-      movie: selectedMovie,
+      movie: movieTitle,
       location: selectedLocation,
       startDate,
       endDate,
@@ -83,50 +121,70 @@ const CreateChecklistModal: FC<{
         <div className="divide-y divide-gray-200">
           {/* 항목 1: 영화 선택 */}
           <div className="py-6 first:pt-0">
-            <p className="mb-2 font-semibold">영화</p>
-            <div className="flex flex-wrap gap-2">
-              {movies.map((movie) => (
-                <button
-                  key={movie}
-                  onClick={() => handleSelectMovie(movie)}
-                  className={`px-4 py-1.5 border rounded-md transition-colors text-sm ${
-                    selectedMovie === movie
-                      ? "bg-gray-300 text-black border-gray-800"
-                      : "bg-white text-gray-700 border-gray-300 hover:border-black"
-                  }`}
-                >
-                  {movie}
-                </button>
+            <label htmlFor="movie-select" className="block mb-2 font-semibold">
+              영화 선택 <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="movie-select"
+              value={selectedMovie}
+              onChange={(e) => {
+                setSelectedMovie(e.target.value);
+                setSelectedLocation(""); // 영화 변경 시 촬영지 초기화
+              }}
+              className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800"
+              required
+            >
+              <option value="">북마크된 영화를 선택하세요</option>
+              {userBookmarksForGallery.map((movie) => (
+                <option key={movie.id} value={movie.tmdbId}>
+                  {movie.movieTitle}
+                </option>
               ))}
-            </div>
+            </select>
+            {userBookmarksForGallery.length === 0 && (
+              <p className="mt-2 text-sm text-gray-500">
+                북마크된 영화가 없습니다. 영화 상세 페이지에서 영화를
+                북마크해주세요.
+              </p>
+            )}
           </div>
 
-          {/* 항목 2: 촬영지 선택 (영화 선택 시 표시) */}
-          {selectedMovie && (
-            <div className="py-6">
-              <label
-                htmlFor="location-select"
-                className="block mb-2 font-semibold"
-              >
-                촬영지 선택
-              </label>
+          {/* 항목 2: 촬영지 선택 */}
+          <div className="py-6">
+            <label
+              htmlFor="location-select"
+              className="block mb-2 font-semibold"
+            >
+              촬영지 선택 <span className="text-red-500">*</span>
+            </label>
+            {!selectedMovie ? (
+              <div className="w-full px-3 py-2 text-center text-gray-500 bg-gray-100 rounded-md">
+                먼저 영화를 선택해주세요
+              </div>
+            ) : loading ? (
+              <div className="w-full px-3 py-2 text-center text-gray-500">
+                촬영지 정보를 불러오는 중...
+              </div>
+            ) : (
               <select
                 id="location-select"
                 value={selectedLocation}
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800"
+                required
               >
                 <option value="" disabled>
                   촬영지를 선택하세요
                 </option>
-                {locations[selectedMovie]?.map((location) => (
-                  <option key={location} value={location}>
-                    {location}
+                {sceneLocations.map((location) => (
+                  <option key={location.id} value={location.name}>
+                    {location.name} ({location.city}, {location.country}) -{" "}
+                    {location.scene}
                   </option>
                 ))}
               </select>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* 항목 3: 여행 기간 선택 (시작일) */}
           <div className="py-6">
@@ -159,7 +217,13 @@ const CreateChecklistModal: FC<{
 
         {/* 생성하기 버튼 */}
         <div className="mt-10 text-right">
-          <Button variant="outline" onClick={handleCreate}>
+          <Button
+            variant="outline"
+            onClick={handleCreate}
+            disabled={
+              !selectedMovie || !selectedLocation || !startDate || !endDate
+            }
+          >
             생성하기
           </Button>
         </div>

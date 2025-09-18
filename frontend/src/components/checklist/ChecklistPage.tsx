@@ -1,32 +1,10 @@
 //미리보기: https://gemini.google.com/share/50249a0df69d
 
-//테스트를 위한 더미데이터
-export const MOCK_MOVIES: string[] = ["영화 A", "영화 B", "영화 C"];
-
-export const MOCK_FILMING_LOCATIONS: { [key: string]: string[] } = {
-  "영화 A": ["촬영지1", "촬영지2", "촬영지3", "촬영지4", "촬영지5"],
-  "영화 B": ["촬영지6", "촬영지8", "촬영지9", "촬영지10", "촬영지11"],
-  "영화 C": ["촬영지12", "촬영지13", "촬영지14", "촬영지15", "촬영지16"],
-};
-
-export const INITIAL_CHECKLISTS: ChecklistType[] = [
-  {
-    id: 1,
-    title: "Check List 1",
-    items: [
-      { id: 101, content: "content1", isCompleted: false },
-      { id: 102, content: "content2", isCompleted: true },
-    ],
-  },
-  {
-    id: 2,
-    title: "Check List 2",
-    items: [
-      { id: 201, content: "content1", isCompleted: false },
-      { id: 202, content: "content2", isCompleted: false },
-    ],
-  },
-];
+import {
+  checklistService,
+  type TravelSchedule,
+} from "../../services/checklistService";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * @file 체크리스트 기능 전체를 담당하는 재사용 가능한 페이지 컴포넌트입니다.
@@ -38,7 +16,6 @@ import type {
   ChecklistType,
   NewChecklistDataType,
   ViewState,
-  ChecklistPageProps,
 } from "../../types/checklist";
 import CreateChecklistModal from "./ChecklistModal";
 import { Button } from "../ui/Button";
@@ -114,41 +91,60 @@ const ChecklistCard: FC<{ checklist: ChecklistType }> = ({ checklist }) => {
   const handleToggleItem = (itemId: number) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
-        item.id === itemId ? { ...item, isCompleted: !item.isCompleted } : item
+        item.id === itemId ? { ...item, completed: !item.completed } : item
       )
     );
   };
 
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
-      if (a.isCompleted === b.isCompleted) return 0;
-      return a.isCompleted ? 1 : -1;
+      // 완료 여부별 정렬 (미완료 > 완료)
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      return 0;
     });
   }, [items]);
 
   return (
     <div className="p-4 text-left bg-white border border-gray-200 rounded-lg">
       <h3 className="mb-3 font-bold text-left">{checklist.title}</h3>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {sortedItems.map((item) => (
-          <div key={item.id} className="flex items-center justify-start gap-2">
+          <div key={item.id} className="flex items-start justify-start gap-3">
             <input
               type="checkbox"
               id={`item-${item.id}`}
-              checked={item.isCompleted}
+              checked={item.completed}
               onChange={() => handleToggleItem(item.id)}
-              className="w-5 h-5 text-gray-800 rounded cursor-pointer focus:ring-gray-700"
+              className="w-5 h-5 mt-0.5 text-gray-800 rounded cursor-pointer focus:ring-gray-700"
             />
-            <label
-              htmlFor={`item-${item.id}`}
-              className={`flex-1 cursor-pointer text-left ${
-                item.isCompleted
-                  ? "text-gray-400 line-through"
-                  : "text-gray-800"
-              }`}
-            >
-              {item.content}
-            </label>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <label
+                  htmlFor={`item-${item.id}`}
+                  className={`cursor-pointer text-left font-bold ${
+                    item.completed
+                      ? "text-gray-400 line-through"
+                      : "text-gray-800"
+                  }`}
+                >
+                  {item.title}
+                </label>
+                <span className="px-2 py-1 text-xs text-gray-500 bg-gray-100 rounded-full">
+                  {item.category}
+                </span>
+              </div>
+              <p
+                className={`text-sm ${
+                  item.completed
+                    ? "text-gray-400 line-through"
+                    : "text-gray-600"
+                }`}
+              >
+                {item.description}
+              </p>
+            </div>
           </div>
         ))}
       </div>
@@ -204,41 +200,73 @@ const ChecklistDisplay: FC<{
 
 // --- 메인 페이지 컴포넌트 ---
 
-const ChecklistPage: FC<ChecklistPageProps> = ({
-  movies = MOCK_MOVIES,
-  locations = MOCK_FILMING_LOCATIONS,
-}) => {
+const ChecklistPage: FC = () => {
+  const { userBookmarksForGallery } = useAuth();
   const [viewState, setViewState] = useState<ViewState>("hasChecklist");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [checklists, setChecklists] =
-    useState<ChecklistType[]>(INITIAL_CHECKLISTS);
-  const [showAll, setShowAll] = useState(true); // 처음에는 모든 체크리스트를 보여줍니다.
+  const [checklists, setChecklists] = useState<ChecklistType[]>([]);
+  const [showAll, setShowAll] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleCreateChecklist = (data: NewChecklistDataType) => {
-    const newChecklist: ChecklistType = {
-      id: Date.now(),
-      title: `${data.movie} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
-      items: [
-        {
-          id: Date.now() + 1,
-          content: `${data.location} 방문하기`,
-          isCompleted: false,
-        },
-        {
-          id: Date.now() + 2,
-          content: "여행 준비물 챙기기",
-          isCompleted: false,
-        },
-      ],
-    };
+  const handleCreateChecklist = async (data: NewChecklistDataType) => {
+    setIsLoading(true);
+    setError(null);
 
-    setChecklists((prevChecklists) => [...prevChecklists, newChecklist]);
-    setViewState("hasChecklist");
-    handleCloseModal();
-    setShowAll(false); // 새로 생성 후에는 최신 것만 보여주도록 상태 변경
+    try {
+      // 북마크된 영화에서 선택된 영화 찾기
+      const selectedMovie = userBookmarksForGallery?.find(
+        (movie) => movie.title === data.movie
+      );
+
+      if (!selectedMovie) {
+        throw new Error("선택된 영화를 찾을 수 없습니다.");
+      }
+
+      const travelSchedule: TravelSchedule = {
+        startDate: data.startDate,
+        endDate: data.endDate,
+        destinations: [data.location],
+      };
+
+      // 체크리스트 생성 API 호출
+      const response = await checklistService.generateChecklist(
+        selectedMovie.tmdbId,
+        travelSchedule,
+        selectedMovie.title
+      );
+
+      if (response.success) {
+        const newChecklist: ChecklistType = {
+          id: Date.now(),
+          title: `${selectedMovie.title} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
+          items: response.data.map((item) => ({
+            id: item.id,
+            title: item.title,
+            description: item.description,
+            category: item.category,
+            completed: false,
+          })),
+        };
+
+        setChecklists((prevChecklists) => [...prevChecklists, newChecklist]);
+        setViewState("hasChecklist");
+        handleCloseModal();
+        setShowAll(false);
+      } else {
+        throw new Error(response.message || "체크리스트 생성에 실패했습니다.");
+      }
+    } catch (err) {
+      console.error("체크리스트 생성 오류:", err);
+      setError(
+        err instanceof Error ? err.message : "체크리스트 생성에 실패했습니다."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleShowAll = () => {
@@ -250,6 +278,31 @@ const ChecklistPage: FC<ChecklistPageProps> = ({
   };
 
   const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="w-full p-8 mx-auto text-center bg-white border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 border-2 border-gray-300 rounded-full">
+            <div className="w-8 h-8 border-4 border-gray-300 rounded-full border-t-gray-600 animate-spin"></div>
+          </div>
+          <p className="text-gray-600">체크리스트를 생성하고 있습니다...</p>
+        </div>
+      );
+    }
+
+    if (error) {
+      return (
+        <div className="w-full p-8 mx-auto text-center bg-white border border-red-200 rounded-lg">
+          <div className="flex items-center justify-center w-24 h-24 mx-auto mb-6 border-2 border-red-300 rounded-full">
+            <CloseIcon className="w-12 h-12 text-red-400" />
+          </div>
+          <p className="mb-4 text-red-600">{error}</p>
+          <Button variant="outline" onClick={handleOpenModal}>
+            다시 시도하기
+          </Button>
+        </div>
+      );
+    }
+
     if (viewState === "hasChecklist" && checklists.length === 0) {
       return (
         <EmptyState
@@ -305,8 +358,6 @@ const ChecklistPage: FC<ChecklistPageProps> = ({
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onCreate={handleCreateChecklist}
-        movies={movies}
-        locations={locations}
       />
     </section>
   );

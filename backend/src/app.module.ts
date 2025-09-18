@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -9,7 +9,9 @@ import { PostsModule } from './posts/posts.module';
 import { MoviesModule } from './movies/movies.module';
 import { LocationsModule } from './locations/locations.module';
 import { LlmModule } from './llm/llm.module';
+import { ChecklistModule } from './llm/checklist.module';
 import { UploadModule } from './upload/upload.module';
+import { SceneLocation } from './llm/entities/scene-location.entity';
 
 @Module({
   imports: [
@@ -33,6 +35,7 @@ import { UploadModule } from './upload/upload.module';
     MoviesModule,
     LocationsModule,
     LlmModule,
+    ChecklistModule,
     UploadModule,
   ],
   controllers: [AppController],
