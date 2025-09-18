@@ -1,14 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ConfigService } from '@nestjs/config';
+
+function extractJwtFromCookie(req: any): string | null {
+  if (req && req.cookies && req.cookies.access_token) {
+    return req.cookies.access_token;
+  }
+  return null;
+}
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
-    console.log('JWT Strategy using secret:', jwtSecret);
+  constructor(private readonly configService: ConfigService) {
+    const jwtSecret = process.env.JWT_SECRET || 'devjwtsecret';
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        extractJwtFromCookie,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: jwtSecret,
     });
@@ -16,8 +26,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     console.log('JWT Payload received:', payload);
-    const user = { id: payload.sub, username: payload.username };
-    console.log('User object created:', user);
-    return user;
+    return {
+      userId: payload.sub,
+      id: payload.sub,
+      email: payload.email,
+      username: payload.username ?? '',
+      avatarUrl: payload.avatarUrl ?? ''
+    };
   }
 }
