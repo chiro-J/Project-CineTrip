@@ -4,6 +4,7 @@ import { PostsController } from './posts.controller';
 import { PostsService } from './posts.service';
 import { CommentsModule } from './comments/comments.module';
 import { LikesModule } from './likes/likes.module';
+import { AuthModule } from '../auth/auth.module';
 import { Post } from './entities/post.entity';
 import { Like } from './likes/entities/like.entity';
 
@@ -12,6 +13,7 @@ import { Like } from './likes/entities/like.entity';
     TypeOrmModule.forFeature([Post, Like]),
     CommentsModule,
     LikesModule,
+    AuthModule,
   ],
   controllers: [PostsController],
   providers: [PostsService],
