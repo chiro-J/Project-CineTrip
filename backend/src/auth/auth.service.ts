@@ -10,6 +10,7 @@ export class AuthService {
     const frontendUser = {
       email: googleUser.email,
       username: googleUser.firstName,
+      avatarUrl: googleUser.picture ?? ''
     };
     const payload = { ...frontendUser, sub: frontendUser.email };
     return {

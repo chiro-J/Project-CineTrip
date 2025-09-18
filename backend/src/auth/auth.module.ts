@@ -11,7 +11,7 @@ import { GoogleStrategy } from './google.strategy'; // 새로 추가할 전략�
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: process.env.JWT_SECRET || 'dev-secret-change-me',
+      secret: 'devjwtsecret',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN || '60m' },
     }),
     ConfigModule,

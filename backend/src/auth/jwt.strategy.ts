@@ -19,12 +19,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         ExtractJwt.fromAuthHeaderAsBearerToken(), // ✅ 헤더에서도 허용
       ]),
       ignoreExpiration: false,
-      secretOrKey: configService.getOrThrow<string>('JWT_SECRET'),
+      secretOrKey: 'devjwtsecret',
     });
   }
 
   async validate(payload: any) {
     // AuthGuard('jwt')가 실행되면 req.user에 이 값이 들어감
-    return { userId: payload.sub, email: payload.email };
+    return { userId: payload.sub, email: payload.email, username: payload.username ?? '', avatarUrl: payload.avatarUrl ?? '' };
   }
 }
