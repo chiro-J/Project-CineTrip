@@ -3,6 +3,10 @@ import { Heart, MapPin, Share2, Trash2, Edit3, Save, X, ExternalLink } from "luc
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
 import { useAuth } from "../../contexts/AuthContext";
+import { postService } from "../../services/postService";
+import { commentService } from "../../services/commentService";
+import { followService } from "../../services/followService";
+import type { CommentData } from "../../services/api";
 
 /**
  * 보여줄 아이템의 타입 정의
@@ -74,12 +78,7 @@ const PostModal: React.FC<PostModalProps> = ({
   }, [onClose]);
 
   // 댓글 기능을 위한 상태 추가
-  const [comments, setComments] = useState([
-    { id: 1, author: "User1", text: "Wow, amazing picture!" },
-    { id: 2, author: "User2", text: "Love this place." },
-    { id: 3, author: "User3", text: "Great shot!" },
-    { id: 4, author: "User4", text: "I want to go there too!" },
-  ]);
+  const [comments, setComments] = useState<CommentData[]>([]);
   const [newComment, setNewComment] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
 
@@ -89,60 +88,67 @@ const PostModal: React.FC<PostModalProps> = ({
 
   // 상태 초기화
   useEffect(() => {
-    if (photoId && user) {
-      // localStorage에서 좋아요 상태 확인
-      const likedPhotos = JSON.parse(localStorage.getItem(`likedPhotos_${user.id}`) || '[]');
-      setIsLiked(likedPhotos.includes(photoId));
-    }
-    if (authorId && user) {
-      // localStorage에서 팔로우 상태 확인
-      const followingUsers = JSON.parse(localStorage.getItem(`following_${user.id}`) || '[]');
-      setIsUserFollowing(followingUsers.includes(authorId));
-    }
+    const initializeData = async () => {
+      if (photoId && user) {
+        try {
+          // API에서 좋아요 상태 확인
+          const { isLiked: likedStatus } = await postService.getLikeStatus(photoId);
+          setIsLiked(likedStatus);
+        } catch (error) {
+          console.error('Failed to fetch like status:', error);
+        }
+      }
+
+      if (authorId && user) {
+        try {
+          // API에서 팔로우 상태 확인
+          const { isFollowing } = await followService.getFollowStatus(authorId);
+          setIsUserFollowing(isFollowing);
+        } catch (error) {
+          console.error('Failed to fetch follow status:', error);
+        }
+      }
+
+      if (photoId) {
+        try {
+          // 댓글 데이터 로드
+          const commentsData = await commentService.getCommentsByPost(photoId);
+          setComments(commentsData);
+        } catch (error) {
+          console.error('Failed to fetch comments:', error);
+        }
+      }
+    };
+
+    initializeData();
   }, [photoId, authorId, user]);
 
   const INITIAL_COMMENT_COUNT = 2;
 
   // 이벤트 핸들러 함수
-  const handleFollowClick = () => {
+  const handleFollowClick = async () => {
     if (authorId && user) {
-      const followingUsers = JSON.parse(localStorage.getItem(`following_${user.id}`) || '[]');
-      const newIsFollowing = !isUserFollowing;
-
-      if (newIsFollowing) {
-        // 팔로우 추가
-        const updatedFollowing = [...followingUsers, authorId];
-        localStorage.setItem(`following_${user.id}`, JSON.stringify(updatedFollowing));
-      } else {
-        // 팔로우 취소
-        const updatedFollowing = followingUsers.filter((id: string) => id !== authorId);
-        localStorage.setItem(`following_${user.id}`, JSON.stringify(updatedFollowing));
+      try {
+        const { isFollowing } = await followService.toggleFollow(authorId);
+        setIsUserFollowing(isFollowing);
+        console.log(`${isFollowing ? '팔로우' : '언팔로우'}되었습니다!`);
+      } catch (error) {
+        console.error('Failed to toggle follow:', error);
       }
-
-      setIsUserFollowing(newIsFollowing);
-      console.log(`${newIsFollowing ? '팔로우' : '언팔로우'}되었습니다!`);
     } else {
       console.error("작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다.");
     }
   };
 
-  const handleLikeClick = () => {
+  const handleLikeClick = async () => {
     if (photoId && user) {
-      const likedPhotos = JSON.parse(localStorage.getItem(`likedPhotos_${user.id}`) || '[]');
-      const newIsLiked = !isLiked;
-
-      if (newIsLiked) {
-        // 좋아요 추가
-        const updatedLikedPhotos = [...likedPhotos, photoId];
-        localStorage.setItem(`likedPhotos_${user.id}`, JSON.stringify(updatedLikedPhotos));
-      } else {
-        // 좋아요 취소
-        const updatedLikedPhotos = likedPhotos.filter((id: string) => id !== photoId);
-        localStorage.setItem(`likedPhotos_${user.id}`, JSON.stringify(updatedLikedPhotos));
+      try {
+        const { isLiked: newIsLiked } = await postService.toggleLike(photoId);
+        setIsLiked(newIsLiked);
+        console.log(`좋아요 ${newIsLiked ? '추가' : '취소'}되었습니다!`);
+      } catch (error) {
+        console.error('Failed to toggle like:', error);
       }
-
-      setIsLiked(newIsLiked);
-      console.log(`좋아요 ${newIsLiked ? '추가' : '취소'}되었습니다!`);
     } else {
       console.error("사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다.");
     }
@@ -173,12 +179,16 @@ const PostModal: React.FC<PostModalProps> = ({
       });
   };
 
-  const handleDeleteClick = () => {
+  const handleDeleteClick = async () => {
     if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       if (photoId) {
-        deletePhoto(photoId);
-        console.log("게시물이 삭제되었습니다!");
-        onClose(); // 삭제 후 모달 닫기
+        try {
+          await postService.deletePost(photoId);
+          console.log("게시물이 삭제되었습니다!");
+          onClose(); // 삭제 후 모달 닫기
+        } catch (error) {
+          console.error('Failed to delete post:', error);
+        }
       } else {
         console.error("사진 ID가 없어 삭제할 수 없습니다.");
       }
@@ -189,15 +199,19 @@ const PostModal: React.FC<PostModalProps> = ({
     setIsEditMode(true);
   };
 
-  const handleSaveClick = () => {
+  const handleSaveClick = async () => {
     if (photoId) {
-      updatePhoto(photoId, {
-        location: editedLocation,
-        title: editedLocation, // title도 location과 동일하게 업데이트
-        description: editedDescription, // 설명도 업데이트
-      });
-      console.log("게시물이 수정되었습니다!");
-      setIsEditMode(false);
+      try {
+        await postService.updatePost(photoId, {
+          location: editedLocation,
+          title: editedLocation, // title도 location과 동일하게 업데이트
+          description: editedDescription, // 설명도 업데이트
+        });
+        console.log("게시물이 수정되었습니다!");
+        setIsEditMode(false);
+      } catch (error) {
+        console.error('Failed to update post:', error);
+      }
     } else {
       console.error("사진 ID가 없어 수정할 수 없습니다.");
     }
@@ -216,18 +230,19 @@ const PostModal: React.FC<PostModalProps> = ({
     setNewComment(e.target.value);
   };
 
-  const handleCommentSubmit = (e: { preventDefault: () => void }) => {
+  const handleCommentSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
-    if (!newComment.trim()) return;
-    setComments((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        author: user?.username || "익명",
+    if (!newComment.trim() || !photoId) return;
+
+    try {
+      const newCommentData = await commentService.createComment(photoId, {
         text: newComment.trim()
-      },
-    ]);
-    setNewComment("");
+      });
+      setComments((prev) => [...prev, newCommentData]);
+      setNewComment("");
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+    }
   };
 
   const commentsToShow = showAllComments
@@ -464,7 +479,7 @@ const PostModal: React.FC<PostModalProps> = ({
             {commentsToShow.map((comment) => (
               <div key={comment.id} className="flex gap-2 text-sm">
                 <span className="flex-shrink-0 font-semibold text-gray-800">
-                  {comment.author}
+                  {comment.user.username}
                 </span>
                 <p className="text-gray-700 break-words">{comment.text}</p>
               </div>

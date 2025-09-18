@@ -13,18 +13,25 @@ function extractJwtFromCookie(req: any): string | null {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(private readonly configService: ConfigService) {
+    const jwtSecret = process.env.JWT_SECRET || 'devjwtsecret';
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
-        extractJwtFromCookie,                     // ✅ 쿠키에서 읽기
-        ExtractJwt.fromAuthHeaderAsBearerToken(), // ✅ 헤더에서도 허용
+        extractJwtFromCookie,
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
       ignoreExpiration: false,
-      secretOrKey: 'devjwtsecret',
+      secretOrKey: jwtSecret,
     });
   }
 
   async validate(payload: any) {
-    // AuthGuard('jwt')가 실행되면 req.user에 이 값이 들어감
-    return { userId: payload.sub, email: payload.email, username: payload.username ?? '', avatarUrl: payload.avatarUrl ?? '' };
+    console.log('JWT Payload received:', payload);
+    return {
+      userId: payload.sub,
+      id: payload.sub,
+      email: payload.email,
+      username: payload.username ?? '',
+      avatarUrl: payload.avatarUrl ?? ''
+    };
   }
 }

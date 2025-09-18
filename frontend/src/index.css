@@ -32,7 +32,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #FFFFFF;
+  background-color: #ffffff;
 }
 
 h1 {
@@ -70,4 +70,51 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* 전광판 애니메이션 */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.marquee {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+
+.marquee-text {
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.scene-card:hover .marquee-text {
+  animation: marquee 8s linear infinite;
+  animation-delay: 0.5s;
+}
+
+/* 박스 호버 효과 */
+.scene-card {
+  transition: all 0.3s ease;
+  transform: translateZ(0);
+  cursor: pointer;
+}
+
+.scene-card:active {
+  transform: translateY(-2px) scale(0.98) !important;
+}
+
+.scene-card:hover {
+  border-color: #0ea5e9 !important;
+  box-shadow:
+    0 0 0 2px rgba(14, 165, 233, 0.3) !important,
+    0 8px 25px rgba(14, 165, 233, 0.15) !important,
+    0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-4px) scale(1.02) !important;
+  z-index: 10;
 }

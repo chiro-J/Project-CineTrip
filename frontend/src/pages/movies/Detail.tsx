@@ -6,18 +6,14 @@ import Footer from "../../components/layout/Footer";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import PostModal from "../../components/post/PostModal";
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { type Item } from "../../types/common";
 import { tmdbService } from "../../services/tmdbService";
 import { type Movie, getImageUrl } from "../../types/movie";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLocationStore } from "../../stores/locationStrore";
 
 // 테스트를 위한 목업 이미지
-const MOCK_GRID_IMAGES1 = Array.from({ length: 5 }, (_, i) => ({
-  id: `grid-${i + 1}`,
-  src: `https://placehold.co/400x400/2B4162/FFFFFF/png?text=Grid+${i + 1}`,
-  alt: `Grid Image ${i + 1}`,
-}));
 
 const MOCK_GRID_IMAGES2 = Array.from({ length: 4 }, (_, i) => ({
   id: `nearby-${i + 1}`,
@@ -110,12 +106,19 @@ const handleClick = () => {
  */
 const MovieDetails = () => {
   const { movieId } = useParams<{ movieId: string }>();
-  const navigate = useNavigate();
   const { toggleBookmark, isBookmarked } = useAuth();
   const [selectedImage, setSelectedImage] = useState<Item | null>(null);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // 촬영지 관련 상태
+  const {
+    items: sceneItems,
+    loading: sceneLoading,
+    error: sceneError,
+    loadByTmdb,
+  } = useLocationStore();
 
   // 북마크 토글 핸들러
   const handleBookmarkToggle = () => {
@@ -138,6 +141,16 @@ const MovieDetails = () => {
         setError(null);
         const movieData = await tmdbService.getMovieDetails(parseInt(movieId));
         setMovie(movieData);
+
+        // 영화 데이터 로드 후 촬영지 정보도 로드
+        await loadByTmdb(parseInt(movieId), {
+          movieInfo: {
+            title: movieData.title,
+            originalTitle: movieData.original_title,
+            country: movieData.production_countries?.[0]?.name,
+            language: movieData.original_language,
+          },
+        });
       } catch (err) {
         setError("영화 정보를 불러오는데 실패했습니다.");
         console.error("Error loading movie details:", err);
@@ -147,7 +160,7 @@ const MovieDetails = () => {
     };
 
     loadMovieDetails();
-  }, [movieId]);
+  }, [movieId, loadByTmdb]);
 
   // '유저 사진' 그리드에서 이미지를 클릭했을 때 실행될 핸들러 함수를 추가합니다.
   const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -243,11 +256,17 @@ const MovieDetails = () => {
                 </div>
                 <div className="text-left">
                   <Button
-                    variant={isBookmarked(parseInt(movieId || "0")) ? "secondary" : "primary"}
+                    variant={
+                      isBookmarked(parseInt(movieId || "0"))
+                        ? "secondary"
+                        : "primary"
+                    }
                     onClick={handleBookmarkToggle}
                     className={`mt-4 ${isBookmarked(parseInt(movieId || "0")) ? "bg-gray-500 hover:bg-gray-600" : ""}`}
                   >
-                    {isBookmarked(parseInt(movieId || "0")) ? "✓ 북마크됨" : "+ 북마크"}
+                    {isBookmarked(parseInt(movieId || "0"))
+                      ? "✓ 북마크됨"
+                      : "+ 북마크"}
                   </Button>
                 </div>
               </div>
@@ -256,11 +275,87 @@ const MovieDetails = () => {
 
           {/* 2. 영화 명장면 촬영지 섹션 */}
           <section className="mb-18">
-            <h2 className="mb-8 text-2xl font-bold text-center">
-              영화 명장면 촬영지
-            </h2>
-            {/* Grid 컴포넌트 위치 (5개 아이템) */}
-            <GridLayout images={MOCK_GRID_IMAGES1} className="grid-cols-5" />
+            <div className="mb-8 text-center">
+              <h2 className="text-2xl font-bold">영화 명장면 촬영지</h2>
+            </div>
+
+            {sceneLoading && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-600">
+                  촬영지 정보를 불러오는 중...
+                </div>
+              </div>
+            )}
+
+            {sceneError && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-red-600">오류: {sceneError}</div>
+              </div>
+            )}
+
+            {!sceneLoading && !sceneError && sceneItems.length === 0 && (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500">촬영지 정보가 없어요.</div>
+              </div>
+            )}
+
+            {!sceneLoading && !sceneError && sceneItems.length > 0 && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-5">
+                {sceneItems.map((scene: any) => (
+                  <div
+                    key={scene.id}
+                    className="flex flex-col w-full h-48 p-3 transition-shadow border border-gray-200 rounded-lg cursor-pointer scene-card hover:shadow-md"
+                    onClick={() => {
+                      const query = encodeURIComponent(
+                        `${scene.name} ${scene.address}`
+                      );
+                      window.open(
+                        `https://www.google.com/maps/search/?api=1&query=${query}`,
+                        "_blank"
+                      );
+                    }}
+                  >
+                    <div className="flex flex-col h-full gap-3">
+                      <div className="flex flex-col flex-1">
+                        <div
+                          className="mb-1 text-lg font-semibold truncate"
+                          title={scene.name}
+                        >
+                          {scene.name}
+                        </div>
+                        <div
+                          className="mb-1 text-sm text-gray-600 truncate"
+                          title={`${scene.country} · ${scene.city}`}
+                        >
+                          {scene.country} · {scene.city}
+                        </div>
+                        <div
+                          className="mb-2 text-sm text-gray-500 truncate"
+                          title={scene.address}
+                        >
+                          {scene.address}
+                        </div>
+                        <div className="flex flex-col justify-between flex-1 p-2 text-sm rounded bg-blue-50">
+                          <div>
+                            <span className="font-medium">장면:</span>
+                            <div className="mt-1 marquee" title={scene.scene}>
+                              <span className="marquee-text">
+                                {scene.scene}
+                              </span>
+                            </div>
+                          </div>
+                          {scene.timestamp && (
+                            <div className="mt-1 text-xs font-medium text-gray-600">
+                              ⏰ {scene.timestamp}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
 
           {/* 3. 명장면 인근 추천 장소 섹션 */}
