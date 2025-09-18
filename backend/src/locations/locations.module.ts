@@ -4,7 +4,7 @@ import { LocationsController } from './locations.controller';
 import { SceneLocationsService } from './locations.service';
 import { LlmModule } from '../llm/llm.module';
 import { TypeOrmService } from '../database/typeorm.service';
-import { SceneLocation } from '../entities/scene-location.entity';
+import { SceneLocation } from '../llm/entities/scene-location.entity';
 
 @Module({
   imports: [LlmModule, TypeOrmModule.forFeature([SceneLocation])],

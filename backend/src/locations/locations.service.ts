@@ -1,8 +1,7 @@
-// src/modules/scene-locations/scene-locations.service.ts
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { TypeOrmService } from '../database/typeorm.service';
 import { LlmService } from '../llm/llm.service';
-import { SceneLocation } from '../entities/scene-location.entity';
+import { SceneLocation } from '../llm/entities/scene-location.entity';
 
 @Injectable()
 export class SceneLocationsService {
@@ -51,7 +50,7 @@ export class SceneLocationsService {
         await this.typeOrm.saveSceneLocation({
           id: existing.id,
           scene: it.scene,
-          timestamp: it.timestamp ?? null,
+          timestamp: it.timestamp ?? undefined,
           address: it.address,
           country: it.country,
           city: it.city,
@@ -62,7 +61,7 @@ export class SceneLocationsService {
           tmdbId,
           name: it.name,
           scene: it.scene,
-          timestamp: it.timestamp ?? null,
+          timestamp: it.timestamp ?? undefined,
           address: it.address,
           country: it.country,
           city: it.city,

@@ -1,11 +1,19 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  sceneItemsSchema,
-  sceneItemSchema,
-} from '../modules/scene-locations/scene.schemas';
+import { sceneItemsSchema, sceneItemSchema } from './modules/scene.schemas';
+import { checklistItemsSchema } from './modules/checklist.schemas';
 
 type GenerateInput = { tmdbId: number };
+type ChecklistInput = {
+  tmdbId: number;
+  movieTitle?: string;
+  sceneLocations: any[];
+  travelSchedule: {
+    startDate: string;
+    endDate: string;
+    destinations: string[];
+  };
+};
 
 @Injectable()
 export class LlmService {
@@ -22,30 +30,40 @@ export class LlmService {
       // 실제 LLM API 호출 (OpenAI GPT-4 사용 예시)
       const response = await this.callLlmApi(prompt);
 
-      // 공급자가 5개 초과를 줘도 방어적으로 자르기
-      const rawItems = Array.isArray(response.items)
-        ? response.items.slice(0, 5)
-        : [];
+      // 스키마 검증 수행
+      const validatedResponse = sceneItemsSchema.parse(response);
+      const rawItems = validatedResponse.items.slice(0, 5); // 최대 5개로 제한
 
-      // 스키마 검증 우회하고 직접 데이터 반환
+      // 검증된 데이터를 처리하여 반환
       const processedItems = rawItems.map((item, index) => {
         return {
           id: item.id || index + 1,
-          name: item.name || `촬영지 ${index + 1}`,
-          scene: item.scene || '장면 설명',
+          name: item.name,
+          scene: item.scene,
           timestamp: item.timestamp || undefined,
-          address: item.address || '주소 정보 없음',
-          country: item.country || 'Unknown',
-          city: item.city || 'Unknown',
-          lat: typeof item.lat === 'number' ? item.lat : 37.5665,
-          lng: typeof item.lng === 'number' ? item.lng : 126.978,
+          address: item.address,
+          country: item.country,
+          city: item.city,
+          lat: item.lat,
+          lng: item.lng,
         };
       });
 
       return { items: processedItems };
     } catch (error) {
-      console.error('LLM API 호출 실패:', error);
-      throw new InternalServerErrorException('LLM 서비스 호출에 실패했습니다.');
+      console.error('LLM API 호출 또는 데이터 검증 실패:', error);
+
+      // 스키마 검증 실패인 경우 구체적인 에러 메시지 제공
+      if (error.name === 'ZodError') {
+        console.error('스키마 검증 실패:', error.issues);
+        throw new InternalServerErrorException(
+          'LLM 응답 데이터 형식이 올바르지 않습니다.',
+        );
+      }
+
+      throw new InternalServerErrorException(
+        `LLM 서비스 호출에 실패했습니다: ${error.message}`,
+      );
     }
   }
 
@@ -240,5 +258,191 @@ export class LlmService {
 }
 
 최대 5개의 촬영지를 포함하고, 좌표는 WGS84 형식으로 제공하세요. 타임스탬프는 "00:00:00" 형식으로 영화에서 해당 장면이 나오는 시간을 제공하세요.`;
+  }
+
+  async generateChecklist(input: ChecklistInput) {
+    const movieInfo = await this.fetchMovieInfo(input.tmdbId);
+    const prompt = this.buildChecklistPrompt(input, movieInfo);
+
+    try {
+      const response = await this.callLlmApi(prompt);
+
+      // 체크리스트 스키마 검증 수행
+      const validatedResponse = checklistItemsSchema.parse(response);
+      const rawItems = validatedResponse.items;
+
+      // 검증된 데이터를 처리하여 반환
+      const processedItems = rawItems.map((item, index) => {
+        return {
+          id: item.id || index + 1,
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          completed: item.completed || false,
+        };
+      });
+
+      return { items: processedItems };
+    } catch (error) {
+      console.error('체크리스트 생성 또는 데이터 검증 실패:', error);
+
+      // 스키마 검증 실패인 경우 구체적인 에러 메시지 제공
+      if (error.name === 'ZodError') {
+        console.error('체크리스트 스키마 검증 실패:', error.issues);
+        throw new InternalServerErrorException(
+          '체크리스트 응답 데이터 형식이 올바르지 않습니다.',
+        );
+      }
+
+      throw new InternalServerErrorException(
+        `체크리스트 생성에 실패했습니다: ${error.message}`,
+      );
+    }
+  }
+
+  private buildChecklistPrompt(input: ChecklistInput, movieInfo: any): string {
+    const movieTitle = input.movieTitle || movieInfo?.title || '영화';
+    const country = movieInfo?.production_countries?.[0]?.name || '한국';
+
+    // 촬영지 정보 정리
+    const locationsInfo = input.sceneLocations
+      .map(
+        (location, index) =>
+          `${index + 1}. ${location.name} (${location.city}, ${location.country})
+     - 장면: ${location.scene}
+     - 주소: ${location.address}
+     - 좌표: ${location.lat}, ${location.lng}`,
+      )
+      .join('\n');
+
+    // 여행 일정 정보
+    const startDate = new Date(input.travelSchedule.startDate);
+    const endDate = new Date(input.travelSchedule.endDate);
+    const travelDuration =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+      ) + 1;
+    const month = startDate.getMonth() + 1;
+
+    // 사용자가 선택한 촬영지의 위도와 국가를 사용하여 계절 계산
+    const selectedLocation = this.findSelectedLocation(
+      input.travelSchedule.destinations,
+      input.sceneLocations,
+    );
+    const selectedLocationLat = selectedLocation?.lat;
+    const selectedLocationCountry = selectedLocation?.country;
+    const season = this.getSeason(
+      month,
+      selectedLocationLat,
+      selectedLocationCountry,
+    );
+
+    return `다음 영화의 촬영지를 여행할 때 필요한 체크리스트를 만들어주세요:
+
+=== 영화 정보 ===
+영화 제목: ${movieTitle}
+제작 국가: ${country}
+개봉년도: ${movieInfo?.release_date?.split('-')[0] || '알 수 없음'}
+장르: ${movieInfo?.genres?.map((g: any) => g.name).join(', ') || '알 수 없음'}
+
+=== 촬영지 정보 ===
+${locationsInfo}
+
+=== 여행 일정 ===
+여행 기간: ${input.travelSchedule.startDate} ~ ${input.travelSchedule.endDate} (${travelDuration}일)
+여행지: ${input.travelSchedule.destinations.join(', ')}
+여행 시기: ${month}월 (${season})
+${selectedLocation ? `선택된 촬영지: ${selectedLocation.name} (${selectedLocation.city}, ${selectedLocation.country}) - 위도: ${selectedLocation.lat}` : ''}
+
+위 정보를 바탕으로 다음 카테고리별로 실용적인 체크리스트를 만들어주세요:
+
+1. 현지 문화·안전 (팁 문화, 신분증, 규정 등)
+2. 감성 스냅 체크리스트 (영화 분위기 재현을 위한 촬영 팁)
+3. 날씨별 준비물 (${season} 날씨에 맞는 의류, 소품)
+4. 촬영지별 특별 준비사항 (각 촬영지의 특성에 맞는 준비물)
+5. 이동·교통 (지역별 교통수단, 이동 팁)
+
+다음 JSON 형식으로만 응답하세요. 다른 텍스트는 포함하지 마세요.
+
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "체크리스트 항목 제목",
+      "description": "상세 설명",
+      "category": "카테고리명",
+      "completed": false
+    }
+  ]
+}
+
+최대 15개의 체크리스트 항목을 포함하고, 실제 여행에 도움이 되는 구체적이고 실용적인 내용을 제공하세요.`;
+  }
+
+  private findSelectedLocation(
+    destinations: string[],
+    sceneLocations: any[],
+  ): any {
+    // 사용자가 선택한 목적지와 매칭되는 촬영지 찾기
+    for (const destination of destinations) {
+      const matchedLocation = sceneLocations.find((location) => {
+        // 정확한 이름 매칭
+        if (location.name === destination) return true;
+
+        // 부분 매칭 (도시명이나 지역명 포함)
+        if (
+          location.name.includes(destination) ||
+          destination.includes(location.name)
+        )
+          return true;
+        if (
+          location.city === destination ||
+          destination.includes(location.city)
+        )
+          return true;
+
+        return false;
+      });
+
+      if (matchedLocation) {
+        return matchedLocation;
+      }
+    }
+
+    // 매칭되는 촬영지가 없으면 첫 번째 촬영지 반환
+    return sceneLocations[0];
+  }
+
+  private getSeason(
+    month: number,
+    latitude?: number,
+    country?: string,
+  ): string {
+    // 위도 정보가 없으면 북반구 기준으로 가정
+    const isNorthernHemisphere = latitude === undefined || latitude >= 0;
+
+    // 적도 근처 국가들은 계절 구분이 명확하지 않음
+    const isEquatorialRegion =
+      latitude !== undefined && Math.abs(latitude) < 10;
+
+    if (isEquatorialRegion) {
+      // 적도 근처: 건기/우기 구분
+      if (month >= 6 && month <= 10) return '우기';
+      return '건기';
+    }
+
+    if (isNorthernHemisphere) {
+      // 북반구
+      if (month >= 3 && month <= 5) return '봄';
+      if (month >= 6 && month <= 8) return '여름';
+      if (month >= 9 && month <= 11) return '가을';
+      return '겨울';
+    } else {
+      // 남반구 (계절이 반대)
+      if (month >= 3 && month <= 5) return '가을';
+      if (month >= 6 && month <= 8) return '겨울';
+      if (month >= 9 && month <= 11) return '봄';
+      return '여름';
+    }
   }
 }

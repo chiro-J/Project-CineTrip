@@ -9,12 +9,14 @@ import {
 } from '@nestjs/common';
 import { LlmService } from './llm.service';
 import { SceneLocationsService } from '../locations/locations.service';
+import { ChecklistService } from './checklist.service';
 
 @Controller('llm')
 export class LlmController {
   constructor(
     private readonly llmService: LlmService,
     private readonly sceneLocationsService: SceneLocationsService,
+    private readonly checklistService: ChecklistService,
   ) {}
 
   @Post('scenes')
@@ -59,5 +61,49 @@ export class LlmController {
     );
 
     return { items };
+  }
+
+  @Post('prompt')
+  async generateChecklist(
+    @Body()
+    body: {
+      tmdbId: number;
+      travelSchedule: {
+        startDate: string;
+        endDate: string;
+        destinations: string[];
+      };
+      movieTitle?: string;
+    },
+  ) {
+    const { tmdbId, travelSchedule, movieTitle } = body;
+
+    // 간단한 검증
+    if (!tmdbId || typeof tmdbId !== 'number') {
+      throw new BadRequestException('tmdbId는 숫자여야 합니다.');
+    }
+
+    if (
+      !travelSchedule ||
+      !travelSchedule.startDate ||
+      !travelSchedule.endDate
+    ) {
+      throw new BadRequestException(
+        '여행 일정(startDate, endDate)은 필수입니다.',
+      );
+    }
+
+    if (
+      !travelSchedule.destinations ||
+      travelSchedule.destinations.length === 0
+    ) {
+      throw new BadRequestException('여행지 목록은 필수입니다.');
+    }
+
+    return this.checklistService.generateChecklist(
+      tmdbId,
+      travelSchedule,
+      movieTitle,
+    );
   }
 }

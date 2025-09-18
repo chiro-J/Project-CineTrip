@@ -1,4 +1,3 @@
-// src/types/scene.ts
 import { z } from "zod";
 
 export const sceneLocationSchema = z.object({
