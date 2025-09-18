@@ -1,0 +1,129 @@
+-- Users table (Google OAuth + 프로필)
+CREATE TABLE `users` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`username`	VARCHAR(255)	NOT NULL	UNIQUE,
+	`email`	VARCHAR(255)	NOT NULL	UNIQUE,
+	`password`	VARCHAR(255)	NULL	COMMENT 'OAuth는 null 가능',
+	`profile_image_url`	VARCHAR(1024)	NULL,
+	`bio`	TEXT	NULL,
+	`followers_count`	INT	DEFAULT 0,
+	`following_count`	INT	DEFAULT 0,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Posts table (게시물)
+CREATE TABLE `posts` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`title`	VARCHAR(255)	NOT NULL,
+	`description`	TEXT	NULL,
+	`image_url`	VARCHAR(1024)	NOT NULL,
+	`location`	VARCHAR(255)	NULL,
+	`likes_count`	INT	DEFAULT 0,
+	`comments_count`	INT	DEFAULT 0,
+	`author_id`	VARCHAR(36)	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Likes table (좋아요)
+CREATE TABLE `likes` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`user_id`	VARCHAR(36)	NOT NULL,
+	`post_id`	VARCHAR(36)	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE KEY `unique_user_post_like` (`user_id`, `post_id`)
+);
+
+-- Comments table (댓글)
+CREATE TABLE `comments` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`text`	TEXT	NOT NULL,
+	`user_id`	VARCHAR(36)	NOT NULL,
+	`post_id`	VARCHAR(36)	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Follows table (팔로우 관계)
+CREATE TABLE `follows` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`follower_id`	VARCHAR(36)	NOT NULL	COMMENT '팔로우하는 사용자',
+	`following_id`	VARCHAR(36)	NOT NULL	COMMENT '팔로우받는 사용자',
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE KEY `unique_follow_relation` (`follower_id`, `following_id`)
+);
+
+-- Movies table (TMDB 영화 정보)
+CREATE TABLE `movies` (
+	`tmdb_id`	BIGINT	NOT NULL	COMMENT 'TMDB API ID',
+	`title`	VARCHAR(255)	NULL,
+	`overview`	TEXT	NULL,
+	`poster_path`	VARCHAR(500)	NULL,
+	`release_date`	DATE	NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Bookmarks table (영화 북마크)
+CREATE TABLE `bookmarks` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`user_id`	VARCHAR(36)	NOT NULL,
+	`tmdb_id`	BIGINT	NOT NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	UNIQUE KEY `unique_user_movie_bookmark` (`user_id`, `tmdb_id`)
+);
+
+-- Locations table (촬영지 정보)
+CREATE TABLE `locations` (
+	`id`	VARCHAR(36)	NOT NULL	COMMENT 'UUID',
+	`tmdb_id`	BIGINT	NOT NULL,
+	`location_name`	VARCHAR(255)	NOT NULL,
+	`scene_description`	TEXT	NULL,
+	`address`	TEXT	NULL,
+	`country`	VARCHAR(100)	NULL,
+	`city`	VARCHAR(100)	NULL,
+	`latitude`	DECIMAL(10,8)	NULL,
+	`longitude`	DECIMAL(11,8)	NULL,
+	`location_image`	VARCHAR(500)	NULL,
+	`created_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP,
+	`updated_at`	TIMESTAMP	NOT NULL	DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Primary Keys
+ALTER TABLE `users` ADD CONSTRAINT `PK_USERS` PRIMARY KEY (`id`);
+ALTER TABLE `posts` ADD CONSTRAINT `PK_POSTS` PRIMARY KEY (`id`);
+ALTER TABLE `likes` ADD CONSTRAINT `PK_LIKES` PRIMARY KEY (`id`);
+ALTER TABLE `comments` ADD CONSTRAINT `PK_COMMENTS` PRIMARY KEY (`id`);
+ALTER TABLE `follows` ADD CONSTRAINT `PK_FOLLOWS` PRIMARY KEY (`id`);
+ALTER TABLE `movies` ADD CONSTRAINT `PK_MOVIES` PRIMARY KEY (`tmdb_id`);
+ALTER TABLE `bookmarks` ADD CONSTRAINT `PK_BOOKMARKS` PRIMARY KEY (`id`);
+ALTER TABLE `locations` ADD CONSTRAINT `PK_LOCATIONS` PRIMARY KEY (`id`);
+
+-- Foreign Keys
+ALTER TABLE `posts` ADD CONSTRAINT `FK_POSTS_AUTHOR`
+    FOREIGN KEY (`author_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `likes` ADD CONSTRAINT `FK_LIKES_USER`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+ALTER TABLE `likes` ADD CONSTRAINT `FK_LIKES_POST`
+    FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `comments` ADD CONSTRAINT `FK_COMMENTS_USER`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+ALTER TABLE `comments` ADD CONSTRAINT `FK_COMMENTS_POST`
+    FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `follows` ADD CONSTRAINT `FK_FOLLOWS_FOLLOWER`
+    FOREIGN KEY (`follower_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+ALTER TABLE `follows` ADD CONSTRAINT `FK_FOLLOWS_FOLLOWING`
+    FOREIGN KEY (`following_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+
+ALTER TABLE `bookmarks` ADD CONSTRAINT `FK_BOOKMARKS_USER`
+    FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE;
+ALTER TABLE `bookmarks` ADD CONSTRAINT `FK_BOOKMARKS_MOVIE`
+    FOREIGN KEY (`tmdb_id`) REFERENCES `movies`(`tmdb_id`) ON DELETE CASCADE;
+
+ALTER TABLE `locations` ADD CONSTRAINT `FK_LOCATIONS_MOVIE`
+    FOREIGN KEY (`tmdb_id`) REFERENCES `movies`(`tmdb_id`) ON DELETE CASCADE;
+

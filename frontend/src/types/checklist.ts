@@ -1,17 +1,17 @@
 /**
  * @typedef {object} ChecklistItemType
  * @property {number} id - 체크리스트 아이템의 고유 ID
- * @property {string} content - 체크리스트 아이템의 내용
- * @property {boolean} isCompleted - 완료 여부
+ * @property {string} title - 체크리스트 아이템의 제목
+ * @property {string} description - 체크리스트 아이템의 상세 설명
+ * @property {string} category - 카테고리
+ * @property {boolean} completed - 완료 여부
  */
 export type ChecklistItemType = {
   id: number;
-  content: string;
-  isCompleted: boolean;
-};
-export type ChecklistPageProps = {
-  movies?: string[];
-  locations?: { [key: string]: string[] };
+  title: string;
+  description: string;
+  category: string;
+  completed: boolean;
 };
 /**
  * @typedef {object} ChecklistType

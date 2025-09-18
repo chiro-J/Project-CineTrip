@@ -21,45 +21,48 @@ const tmdb = axios.create({
 
 /** 인기 영화 */
 async function getPopularMovies(
-  page = 1, 
+  page = 1,
   config?: { language?: string; region?: string; includeAdult?: boolean }
 ): Promise<MovieListResponse> {
   const params: any = { page };
-  
+
   if (config?.language) params.language = config.language;
   if (config?.region) params.region = config.region;
-  if (config?.includeAdult !== undefined) params.include_adult = config.includeAdult;
-  
+  if (config?.includeAdult !== undefined)
+    params.include_adult = config.includeAdult;
+
   const { data } = await tmdb.get("/movie/popular", { params });
   return data;
 }
 
 /** 최신/현재 상영중 */
 async function getLatestMovies(
-  page = 1, 
+  page = 1,
   config?: { language?: string; region?: string; includeAdult?: boolean }
 ): Promise<MovieListResponse> {
   const params: any = { page };
-  
+
   if (config?.language) params.language = config.language;
   if (config?.region) params.region = config.region;
-  if (config?.includeAdult !== undefined) params.include_adult = config.includeAdult;
-  
+  if (config?.includeAdult !== undefined)
+    params.include_adult = config.includeAdult;
+
   const { data } = await tmdb.get("/movie/now_playing", { params });
   return data;
 }
 
 /** 영화 상세 */
 async function getMovieDetails(
-  movieId: number, 
+  movieId: number,
   config?: { language?: string; region?: string; includeAdult?: boolean }
 ): Promise<Movie> {
   const params: any = {};
-  
+
   if (config?.language) params.language = config.language;
   if (config?.region) params.region = config.region;
-  if (config?.includeAdult !== undefined) params.include_adult = config.includeAdult;
-  
+  if (config?.includeAdult !== undefined)
+    params.include_adult = config.includeAdult;
+
   const { data } = await tmdb.get(`/movie/${movieId}`, { params });
   return data;
 }
@@ -71,12 +74,13 @@ async function searchMovies(
   config?: { language?: string; region?: string; includeAdult?: boolean }
 ): Promise<MovieListResponse> {
   const params: any = { query, page };
-  
+
   if (config?.language) params.language = config.language;
   if (config?.region) params.region = config.region;
-  if (config?.includeAdult !== undefined) params.include_adult = config.includeAdult;
+  if (config?.includeAdult !== undefined)
+    params.include_adult = config.includeAdult;
   else params.include_adult = false; // 기본값
-  
+
   const { data } = await tmdb.get("/search/movie", { params });
   return data;
 }
