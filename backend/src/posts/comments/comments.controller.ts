@@ -24,14 +24,18 @@ export class CommentsController {
     @Body() createCommentDto: CreateCommentDto,
     @Request() req: any,
   ): Promise<CommentResponseDto> {
-    return this.commentsService.create(postId, createCommentDto, req.user.id);
+    return this.commentsService.create(
+      parseInt(postId),
+      createCommentDto,
+      parseInt(req.user.id),
+    );
   }
 
   @Get(':postId/comments')
   async findByPost(
     @Param('postId') postId: string,
   ): Promise<CommentResponseDto[]> {
-    return this.commentsService.findByPost(postId);
+    return this.commentsService.findByPost(parseInt(postId));
   }
 
   @Delete(':postId/comments/:commentId')
@@ -41,6 +45,9 @@ export class CommentsController {
     @Param('commentId') commentId: string,
     @Request() req: any,
   ): Promise<void> {
-    return this.commentsService.remove(commentId, req.user.id);
+    return this.commentsService.remove(
+      parseInt(commentId),
+      parseInt(req.user.id),
+    );
   }
 }

@@ -127,7 +127,7 @@ const MovieDetails = () => {
     }
   };
 
-  // 영화 데이터 로드
+  // 영화 데이터 로드 (TMDB API만)
   useEffect(() => {
     const loadMovieDetails = async () => {
       if (!movieId) {
@@ -141,16 +141,6 @@ const MovieDetails = () => {
         setError(null);
         const movieData = await tmdbService.getMovieDetails(parseInt(movieId));
         setMovie(movieData);
-
-        // 영화 데이터 로드 후 촬영지 정보도 로드
-        await loadByTmdb(parseInt(movieId), {
-          movieInfo: {
-            title: movieData.title,
-            originalTitle: movieData.original_title,
-            country: movieData.production_countries?.[0]?.name,
-            language: movieData.original_language,
-          },
-        });
       } catch (err) {
         setError("영화 정보를 불러오는데 실패했습니다.");
         console.error("Error loading movie details:", err);
@@ -160,7 +150,29 @@ const MovieDetails = () => {
     };
 
     loadMovieDetails();
-  }, [movieId, loadByTmdb]);
+  }, [movieId]);
+
+  // 촬영지 정보 로드 (영화 데이터 로드 후 별도로 실행)
+  useEffect(() => {
+    const loadSceneLocations = async () => {
+      if (!movieId || !movie) return;
+
+      try {
+        await loadByTmdb(parseInt(movieId), {
+          movieInfo: {
+            title: movie.title,
+            originalTitle: movie.original_title,
+            country: movie.production_countries?.[0]?.name,
+            language: movie.original_language,
+          },
+        });
+      } catch (err) {
+        console.error("Error loading scene locations:", err);
+      }
+    };
+
+    loadSceneLocations();
+  }, [movieId, movie, loadByTmdb]);
 
   // '유저 사진' 그리드에서 이미지를 클릭했을 때 실행될 핸들러 함수를 추가합니다.
   const handleUserImageClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -179,23 +191,8 @@ const MovieDetails = () => {
     }
   };
 
-  // 로딩 상태
-  if (loading) {
-    return (
-      <>
-        <Header />
-        <SideNavigationBar />
-        <div className="flex items-center justify-center py-20">
-          <div className="text-lg text-gray-600">
-            영화 정보를 불러오는 중...
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // 에러 상태
-  if (error || !movie) {
+  // 에러 상태 (영화 정보 로딩 실패)
+  if (error || (!loading && !movie)) {
     return (
       <>
         <Header />
@@ -203,6 +200,21 @@ const MovieDetails = () => {
         <div className="flex items-center justify-center py-20">
           <div className="text-lg text-red-600">
             {error || "영화를 찾을 수 없습니다."}
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  // 영화 정보 로딩 중
+  if (loading || !movie) {
+    return (
+      <>
+        <Header />
+        <SideNavigationBar />
+        <div className="flex items-center justify-center py-20">
+          <div className="text-lg text-gray-600">
+            영화 정보를 불러오는 중...
           </div>
         </div>
       </>
@@ -280,22 +292,34 @@ const MovieDetails = () => {
             </div>
 
             {sceneLoading && (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-gray-600">
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="w-8 h-8 mb-4 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
+                <div className="text-lg text-gray-600">
                   촬영지 정보를 불러오는 중...
+                </div>
+                <div className="mt-2 text-sm text-gray-400">
+                  AI가 영화 장면을 분석하고 있습니다
                 </div>
               </div>
             )}
 
             {sceneError && (
               <div className="flex items-center justify-center py-8">
-                <div className="text-red-600">오류: {sceneError}</div>
+                <div className="text-center">
+                  <div className="mb-2 text-lg text-red-600">
+                    ⚠️ 오류가 발생했습니다
+                  </div>
+                  <div className="text-gray-500">{sceneError}</div>
+                </div>
               </div>
             )}
 
             {!sceneLoading && !sceneError && sceneItems.length === 0 && (
               <div className="flex items-center justify-center py-8">
-                <div className="text-gray-500">촬영지 정보가 없어요.</div>
+                <div className="text-center">
+                  <div className="mb-2 text-lg text-gray-500">📍</div>
+                  <div className="text-gray-500">촬영지 정보가 없어요.</div>
+                </div>
               </div>
             )}
 

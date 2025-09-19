@@ -1,10 +1,11 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+import { apiHelpers } from "./api";
 
 export interface TravelSchedule {
   startDate: string;
   endDate: string;
-  destinations: string[];
+  destinations?: string[];
+  budget?: number;
+  travelers?: number;
 }
 
 export interface ChecklistItem {
@@ -28,23 +29,11 @@ export const checklistService = {
     movieTitle?: string
   ): Promise<ChecklistResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/llm/prompt/checklist`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tmdbId,
-          travelSchedule,
-          movieTitle,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("체크리스트 생성에 실패했습니다.");
-      }
-
-      return response.json();
+      return await apiHelpers.generateChecklist(
+        tmdbId,
+        travelSchedule,
+        movieTitle
+      );
     } catch (error) {
       console.warn("API 호출 실패, 모킹 데이터 사용:", error);
       // API 호출 실패 시 모킹 데이터 반환
@@ -110,25 +99,23 @@ export const checklistService = {
     destinations: string[],
     movieTitle?: string
   ): Promise<ChecklistResponse> {
-    const params = new URLSearchParams({
-      tmdbId: tmdbId.toString(),
+    const travelSchedule: TravelSchedule = {
       startDate,
       endDate,
-      destinations: destinations.join(","),
-    });
+      destinations,
+      budget: undefined,
+      travelers: undefined,
+    };
 
-    if (movieTitle) {
-      params.append("movieTitle", movieTitle);
+    try {
+      return await apiHelpers.generateChecklist(
+        tmdbId,
+        travelSchedule,
+        movieTitle
+      );
+    } catch (error) {
+      console.warn("API 호출 실패, 모킹 데이터 사용:", error);
+      return this.getMockChecklist(tmdbId, travelSchedule, movieTitle);
     }
-
-    const response = await fetch(
-      `${API_BASE_URL}/llm/prompt/checklist?${params}`
-    );
-
-    if (!response.ok) {
-      throw new Error("체크리스트 생성에 실패했습니다.");
-    }
-
-    return response.json();
   },
 };

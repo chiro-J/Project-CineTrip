@@ -4,7 +4,7 @@ import {
   Param,
   UseGuards,
   Request,
-  Delete
+  Delete,
 } from '@nestjs/common';
 import { LikesService } from './likes.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -18,8 +18,8 @@ export class LikesController {
   async addLike(
     @Param('postId') postId: string,
     @Request() req: any,
-  ): Promise<{ likeId: string; likesCount: number }> {
-    return this.likesService.addLike(postId, req.user.id);
+  ): Promise<{ likeId: number; likesCount: number }> {
+    return this.likesService.addLike(parseInt(postId), parseInt(req.user.id));
   }
 
   @Delete(':postId/likes/:likeId')
@@ -29,6 +29,9 @@ export class LikesController {
     @Param('likeId') likeId: string,
     @Request() req: any,
   ): Promise<void> {
-    return this.likesService.removeLike(likeId, req.user.id);
+    return this.likesService.removeLike(
+      parseInt(likeId),
+      parseInt(req.user.id),
+    );
   }
 }

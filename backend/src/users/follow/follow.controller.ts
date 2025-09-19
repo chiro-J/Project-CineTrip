@@ -20,7 +20,10 @@ export class FollowController {
     @Param('userId') userId: string,
     @Request() req: any,
   ): Promise<{ isFollowing: boolean; followersCount: number }> {
-    return this.followService.toggleFollow(req.user.id, userId);
+    return this.followService.toggleFollow(
+      parseInt(req.user.id),
+      parseInt(userId),
+    );
   }
 
   @Get(':userId/status')
@@ -29,25 +32,30 @@ export class FollowController {
     @Param('userId') userId: string,
     @Request() req: any,
   ): Promise<{ isFollowing: boolean }> {
-    const isFollowing = await this.followService.isFollowing(req.user.id, userId);
+    const isFollowing = await this.followService.isFollowing(
+      parseInt(req.user.id),
+      parseInt(userId),
+    );
     return { isFollowing };
   }
 
   @Get(':userId/followers')
   async getFollowers(@Param('userId') userId: string): Promise<User[]> {
-    return this.followService.getFollowers(userId);
+    return this.followService.getFollowers(parseInt(userId));
   }
 
   @Get(':userId/following')
   async getFollowing(@Param('userId') userId: string): Promise<User[]> {
-    return this.followService.getFollowing(userId);
+    return this.followService.getFollowing(parseInt(userId));
   }
 
   @Get(':userId/followers/count')
   async getFollowersCount(
     @Param('userId') userId: string,
   ): Promise<{ followersCount: number }> {
-    const followersCount = await this.followService.getFollowersCount(userId);
+    const followersCount = await this.followService.getFollowersCount(
+      parseInt(userId),
+    );
     return { followersCount };
   }
 
@@ -55,7 +63,9 @@ export class FollowController {
   async getFollowingCount(
     @Param('userId') userId: string,
   ): Promise<{ followingCount: number }> {
-    const followingCount = await this.followService.getFollowingCount(userId);
+    const followingCount = await this.followService.getFollowingCount(
+      parseInt(userId),
+    );
     return { followingCount };
   }
 }

@@ -1,11 +1,20 @@
 import { useState, useEffect, type SetStateAction } from "react";
-import { Heart, MapPin, Share2, Trash2, Edit3, Save, X, ExternalLink } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  Share2,
+  Trash2,
+  Edit3,
+  Save,
+  X,
+  ExternalLink,
+} from "lucide-react";
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
 import { useAuth } from "../../contexts/AuthContext";
 import { postService } from "../../services/postService";
-import { commentService } from "../../services/commentService";
 import { followService } from "../../services/followService";
+import { commentService } from "../../services/commentService";
 import type { CommentData } from "../../services/api";
 
 /**
@@ -52,12 +61,14 @@ const PostModal: React.FC<PostModalProps> = ({
   console.log("PostModal props:", { photoId, authorId, authorName });
 
   // 인증 정보 가져오기
-  const { user, isLoggedIn, deletePhoto, updatePhoto, togglePhotoLike, isPhotoLiked, toggleFollow, isFollowing } = useAuth();
+  const { user, isLoggedIn } = useAuth();
 
   // 편집 모드 상태
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedLocation, setEditedLocation] = useState(locationLabel);
-  const [editedDescription, setEditedDescription] = useState(descriptionText || "");
+  const [editedDescription, setEditedDescription] = useState(
+    descriptionText || ""
+  );
 
   // props가 변경될 때마다 편집 상태 업데이트
   useEffect(() => {
@@ -89,23 +100,13 @@ const PostModal: React.FC<PostModalProps> = ({
   // 상태 초기화
   useEffect(() => {
     const initializeData = async () => {
-      if (photoId && user) {
-        try {
-          // API에서 좋아요 상태 확인
-          const { isLiked: likedStatus } = await postService.getLikeStatus(photoId);
-          setIsLiked(likedStatus);
-        } catch (error) {
-          console.error('Failed to fetch like status:', error);
-        }
-      }
-
       if (authorId && user) {
         try {
           // API에서 팔로우 상태 확인
           const { isFollowing } = await followService.getFollowStatus(authorId);
           setIsUserFollowing(isFollowing);
         } catch (error) {
-          console.error('Failed to fetch follow status:', error);
+          console.error("Failed to fetch follow status:", error);
         }
       }
 
@@ -115,7 +116,7 @@ const PostModal: React.FC<PostModalProps> = ({
           const commentsData = await commentService.getCommentsByPost(photoId);
           setComments(commentsData);
         } catch (error) {
-          console.error('Failed to fetch comments:', error);
+          console.error("Failed to fetch comments:", error);
         }
       }
     };
@@ -131,26 +132,30 @@ const PostModal: React.FC<PostModalProps> = ({
       try {
         const { isFollowing } = await followService.toggleFollow(authorId);
         setIsUserFollowing(isFollowing);
-        console.log(`${isFollowing ? '팔로우' : '언팔로우'}되었습니다!`);
+        console.log(`${isFollowing ? "팔로우" : "언팔로우"}되었습니다!`);
       } catch (error) {
-        console.error('Failed to toggle follow:', error);
+        console.error("Failed to toggle follow:", error);
       }
     } else {
-      console.error("작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다.");
+      console.error(
+        "작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다."
+      );
     }
   };
 
   const handleLikeClick = async () => {
     if (photoId && user) {
       try {
-        const { isLiked: newIsLiked } = await postService.toggleLike(photoId);
-        setIsLiked(newIsLiked);
-        console.log(`좋아요 ${newIsLiked ? '추가' : '취소'}되었습니다!`);
+        await postService.toggleLike(photoId);
+        setIsLiked(!isLiked);
+        console.log(`좋아요 ${!isLiked ? "추가" : "취소"}되었습니다!`);
       } catch (error) {
-        console.error('Failed to toggle like:', error);
+        console.error("Failed to toggle like:", error);
       }
     } else {
-      console.error("사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다.");
+      console.error(
+        "사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다."
+      );
     }
   };
 
@@ -187,7 +192,7 @@ const PostModal: React.FC<PostModalProps> = ({
           console.log("게시물이 삭제되었습니다!");
           onClose(); // 삭제 후 모달 닫기
         } catch (error) {
-          console.error('Failed to delete post:', error);
+          console.error("Failed to delete post:", error);
         }
       } else {
         console.error("사진 ID가 없어 삭제할 수 없습니다.");
@@ -210,7 +215,7 @@ const PostModal: React.FC<PostModalProps> = ({
         console.log("게시물이 수정되었습니다!");
         setIsEditMode(false);
       } catch (error) {
-        console.error('Failed to update post:', error);
+        console.error("Failed to update post:", error);
       }
     } else {
       console.error("사진 ID가 없어 수정할 수 없습니다.");
@@ -236,12 +241,12 @@ const PostModal: React.FC<PostModalProps> = ({
 
     try {
       const newCommentData = await commentService.createComment(photoId, {
-        text: newComment.trim()
+        text: newComment.trim(),
       });
       setComments((prev) => [...prev, newCommentData]);
       setNewComment("");
     } catch (error) {
-      console.error('Failed to create comment:', error);
+      console.error("Failed to create comment:", error);
     }
   };
 
@@ -417,7 +422,7 @@ const PostModal: React.FC<PostModalProps> = ({
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editedLocation || locationLabel || "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors flex items-center gap-1"
+                    className="flex items-center gap-1 text-sm text-blue-600 transition-colors cursor-pointer hover:text-blue-800 hover:underline"
                     onClick={(e) => {
                       // 위치 정보가 없으면 링크 클릭 방지
                       if (!editedLocation && !locationLabel) {

@@ -8,7 +8,7 @@ import {
   Delete,
   UseGuards,
   Request,
-  Query
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -26,21 +26,23 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
     @Request() req: any,
   ): Promise<PostResponseDto> {
-    return this.postsService.create(createPostDto, req.user.id);
+    return this.postsService.create(createPostDto, parseInt(req.user.id));
   }
 
   @Get()
   async findAll(@Query('userId') userId?: string): Promise<PostResponseDto[]> {
-    return this.postsService.findAll(userId);
+    return this.postsService.findAll(userId ? parseInt(userId) : undefined);
   }
-
 
   @Get(':postId')
   async findOne(
     @Param('postId') postId: string,
     @Query('userId') userId?: string,
   ): Promise<PostResponseDto> {
-    return this.postsService.findOne(postId, userId);
+    return this.postsService.findOne(
+      parseInt(postId),
+      userId ? parseInt(userId) : undefined,
+    );
   }
 
   @Patch(':postId')
@@ -50,12 +52,19 @@ export class PostsController {
     @Body() updatePostDto: UpdatePostDto,
     @Request() req: any,
   ): Promise<PostResponseDto> {
-    return this.postsService.update(postId, updatePostDto, req.user.id);
+    return this.postsService.update(
+      parseInt(postId),
+      updatePostDto,
+      parseInt(req.user.id),
+    );
   }
 
   @Delete(':postId')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('postId') postId: string, @Request() req: any): Promise<void> {
-    return this.postsService.remove(postId, req.user.id);
+  async remove(
+    @Param('postId') postId: string,
+    @Request() req: any,
+  ): Promise<void> {
+    return this.postsService.remove(parseInt(postId), parseInt(req.user.id));
   }
 }

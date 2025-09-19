@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from './entities/comment.entity';
@@ -16,9 +20,9 @@ export class CommentsService {
   ) {}
 
   async create(
-    postId: string,
+    postId: number,
     createCommentDto: CreateCommentDto,
-    userId: string,
+    userId: number,
   ): Promise<CommentResponseDto> {
     const post = await this.postRepository.findOne({ where: { id: postId } });
 
@@ -41,17 +45,17 @@ export class CommentsService {
     return this.findOne(savedComment.id);
   }
 
-  async findByPost(postId: string): Promise<CommentResponseDto[]> {
+  async findByPost(postId: number): Promise<CommentResponseDto[]> {
     const comments = await this.commentRepository.find({
       where: { postId },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });
 
-    return comments.map(comment => this.mapToResponseDto(comment));
+    return comments.map((comment) => this.mapToResponseDto(comment));
   }
 
-  async findOne(id: string): Promise<CommentResponseDto> {
+  async findOne(id: number): Promise<CommentResponseDto> {
     const comment = await this.commentRepository.findOne({
       where: { id },
       relations: ['user'],
@@ -64,7 +68,7 @@ export class CommentsService {
     return this.mapToResponseDto(comment);
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
     const comment = await this.commentRepository.findOne({ where: { id } });
 
     if (!comment) {

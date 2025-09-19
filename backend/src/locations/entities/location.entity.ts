@@ -1,44 +1,35 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
-import { Movie } from '../../movies/entities/movie.entity';
+import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
 
-@Entity('locations')
-export class Location {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+@Entity('scene_locations')
+@Index(['tmdbId', 'location_name', 'latitude', 'longitude'], { unique: true })
+export class SceneLocation {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column('bigint')
+  @Column({ type: 'bigint' })
   tmdbId: number;
 
-  @Column()
-  locationName: string;
+  @Column({ type: 'varchar', length: 255 })
+  location_name: string;
 
-  @Column({ type: 'text', nullable: true })
-  sceneDescription: string;
+  @Column({ type: 'text' })
+  scene_description: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  timestamp: string;
+
+  @Column({ type: 'text' })
   address: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100 })
   country: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100 })
   city: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
+  @Column({ type: 'decimal', precision: 10, scale: 8 })
   latitude: number;
 
-  @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
+  @Column({ type: 'decimal', precision: 11, scale: 8 })
   longitude: number;
-
-  @Column({ nullable: true })
-  locationImage: string;
-
-  @ManyToOne(() => Movie, movie => movie.locations, { onDelete: 'CASCADE' })
-  movie: Movie;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }
