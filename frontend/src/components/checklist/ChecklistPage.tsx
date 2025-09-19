@@ -5,11 +5,14 @@ import {
   type TravelSchedule,
 } from "../../services/checklistService";
 import { useAuth } from "../../contexts/AuthContext";
+import { bookmarkService } from "../../services/bookmarkService";
+import { tmdbService } from "../../services/tmdbService";
 
 /**
  * @file 체크리스트 기능 전체를 담당하는 재사용 가능한 페이지 컴포넌트입니다.
  */
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import type { FC } from "react";
 import type {
   ChecklistItemType,
@@ -201,16 +204,84 @@ const ChecklistDisplay: FC<{
 // --- 메인 페이지 컴포넌트 ---
 
 const ChecklistPage: FC = () => {
-  const { userBookmarksForGallery } = useAuth();
-  const [viewState, setViewState] = useState<ViewState>("hasChecklist");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [viewState, setViewState] = useState<ViewState>(() => {
+    // 로컬 스토리지에서 체크리스트 확인하여 초기 상태 설정
+    const savedChecklists = localStorage.getItem("userChecklists");
+    const checklists = savedChecklists ? JSON.parse(savedChecklists) : [];
+    return checklists.length > 0 ? "hasChecklist" : "noChecklist";
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [checklists, setChecklists] = useState<ChecklistType[]>([]);
-  const [showAll, setShowAll] = useState(true);
+  const [checklists, setChecklists] = useState<ChecklistType[]>(() => {
+    // 로컬 스토리지에서 체크리스트 로드
+    const savedChecklists = localStorage.getItem("userChecklists");
+    return savedChecklists ? JSON.parse(savedChecklists) : [];
+  });
+  const [showAll, setShowAll] = useState(false); // 처음에는 최신 체크리스트만 표시
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bookmarkedMovies, setBookmarkedMovies] = useState<any[]>([]);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+
+  // 영화 검색 페이지로 이동
+  const handleGoToMovies = () => {
+    navigate("/movies");
+  };
+
+  // 북마크된 영화 로드
+  useEffect(() => {
+    if (user) {
+      const loadBookmarkedMovies = async () => {
+        try {
+          const bookmarks = await bookmarkService.getUserBookmarks(user.id);
+
+          // 북마크된 영화의 상세 정보 가져오기
+          const movieDetails = await Promise.all(
+            bookmarks.map(async (bookmark) => {
+              try {
+                const movieDetail = await tmdbService.getMovieDetails(
+                  bookmark.tmdbId
+                );
+                return {
+                  id: bookmark.id,
+                  tmdbId: bookmark.tmdbId,
+                  title: movieDetail.title,
+                  movieTitle: movieDetail.title,
+                  posterPath: movieDetail.poster_path,
+                };
+              } catch (error) {
+                console.error(
+                  `영화 ${bookmark.tmdbId} 상세 정보 로드 실패:`,
+                  error
+                );
+                return null;
+              }
+            })
+          );
+
+          setBookmarkedMovies(movieDetails.filter(Boolean));
+
+          // 북마크 상태에 따라 viewState 설정
+          if (movieDetails.filter(Boolean).length === 0) {
+            setViewState("noBookmarks");
+          } else if (checklists.length === 0) {
+            setViewState("noChecklist");
+          } else {
+            setViewState("hasChecklist");
+          }
+        } catch (error) {
+          console.error("북마크된 영화 로드 실패:", error);
+          setBookmarkedMovies([]);
+          setViewState("noBookmarks");
+        }
+      };
+
+      loadBookmarkedMovies();
+    }
+  }, [user, checklists.length]);
 
   const handleCreateChecklist = async (data: NewChecklistDataType) => {
     setIsLoading(true);
@@ -218,8 +289,8 @@ const ChecklistPage: FC = () => {
 
     try {
       // 북마크된 영화에서 선택된 영화 찾기
-      const selectedMovie = userBookmarksForGallery?.find(
-        (movie) => movie.title === data.movie
+      const selectedMovie = bookmarkedMovies?.find(
+        (movie) => movie.movieTitle === data.movie
       );
 
       if (!selectedMovie) {
@@ -236,13 +307,13 @@ const ChecklistPage: FC = () => {
       const response = await checklistService.generateChecklist(
         selectedMovie.tmdbId,
         travelSchedule,
-        selectedMovie.title
+        selectedMovie.movieTitle
       );
 
       if (response.success) {
         const newChecklist: ChecklistType = {
           id: Date.now(),
-          title: `${selectedMovie.title} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
+          title: `${selectedMovie.movieTitle} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
           items: response.data.map((item) => ({
             id: item.id,
             title: item.title,
@@ -252,10 +323,16 @@ const ChecklistPage: FC = () => {
           })),
         };
 
-        setChecklists((prevChecklists) => [...prevChecklists, newChecklist]);
+        const updatedChecklists = [...checklists, newChecklist];
+        setChecklists(updatedChecklists);
+        // 로컬 스토리지에 저장
+        localStorage.setItem(
+          "userChecklists",
+          JSON.stringify(updatedChecklists)
+        );
         setViewState("hasChecklist");
+        setShowAll(true); // 모든 체크리스트 표시
         handleCloseModal();
-        setShowAll(false);
       } else {
         throw new Error(response.message || "체크리스트 생성에 실패했습니다.");
       }
@@ -285,6 +362,7 @@ const ChecklistPage: FC = () => {
             <div className="w-8 h-8 border-4 border-gray-300 rounded-full border-t-gray-600 animate-spin"></div>
           </div>
           <p className="text-gray-600">체크리스트를 생성하고 있습니다...</p>
+          <p className="mt-2 text-sm text-gray-500">잠시만 기다려주세요.</p>
         </div>
       );
     }
@@ -318,8 +396,8 @@ const ChecklistPage: FC = () => {
         return (
           <EmptyState
             message="북마크 해 둔 영화가 없습니다."
-            buttonText="이동하기"
-            onButtonClick={() => {}}
+            buttonText="영화 검색하러 가기"
+            onButtonClick={handleGoToMovies}
           />
         );
       case "noChecklist":

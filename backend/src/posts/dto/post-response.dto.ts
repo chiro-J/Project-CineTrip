@@ -1,14 +1,14 @@
 export class PostResponseDto {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   imageUrl: string;
   location?: string;
   likesCount: number;
   commentsCount: number;
-  authorId: string;
+  authorId: number;
   author: {
-    id: string;
+    id: number;
     username: string;
     profileImageUrl?: string;
   };

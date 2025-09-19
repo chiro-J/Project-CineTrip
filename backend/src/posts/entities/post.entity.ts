@@ -13,8 +13,8 @@ import { Comment } from '../comments/entities/comment.entity';
 
 @Entity('posts')
 export class Post {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   title: string;
@@ -34,8 +34,8 @@ export class Post {
   @Column({ default: 0 })
   commentsCount: number;
 
-  @Column('uuid')
-  authorId: string;
+  @Column()
+  authorId: number;
 
   @ManyToOne(() => User, (user) => user.posts, { onDelete: 'CASCADE' })
   author: User;

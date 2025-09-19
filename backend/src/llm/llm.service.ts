@@ -1,6 +1,9 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { sceneItemsSchema, sceneItemSchema } from './modules/scene.schemas';
+import {
+  sceneItemsSchema,
+  sceneItemSchema,
+} from '../locations/modules/scene.schemas';
 import { checklistItemsSchema } from './modules/checklist.schemas';
 
 type GenerateInput = { tmdbId: number };

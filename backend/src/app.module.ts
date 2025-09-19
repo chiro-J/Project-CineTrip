@@ -11,7 +11,6 @@ import { LocationsModule } from './locations/locations.module';
 import { LlmModule } from './llm/llm.module';
 import { ChecklistModule } from './llm/checklist.module';
 import { UploadModule } from './upload/upload.module';
-import { SceneLocation } from './llm/entities/scene-location.entity';
 
 @Module({
   imports: [

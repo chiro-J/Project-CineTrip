@@ -1,7 +1,7 @@
-// src/stores/sceneStore.ts
+// src/stores/locationStore.ts
 import { create } from "zustand";
+import { apiHelpers } from "../services/api";
 import type { SceneLocation } from "../types/scene";
-import { fetchSceneLocationsByTmdb } from "../modules/api";
 
 type LocationState = {
   loading: boolean;
@@ -28,7 +28,7 @@ export const useLocationStore = create<LocationState>((set) => ({
   async loadByTmdb(tmdbId, opts) {
     set({ loading: true, error: undefined });
     try {
-      const data = await fetchSceneLocationsByTmdb(tmdbId, opts);
+      const data = await apiHelpers.fetchSceneLocationsByTmdb(tmdbId, opts);
       set({ items: data.items, loading: false });
     } catch (e: unknown) {
       const msg =
