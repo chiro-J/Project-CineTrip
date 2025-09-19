@@ -8,10 +8,14 @@ async function bootstrap() {
   // 쿠키 파서 미들웨어 추가
   app.use(cookieParser());
 
+  // Global prefix 설정
+  app.setGlobalPrefix('api');
+
   // CORS 설정
   app.enableCors({
     origin: [
       'http://localhost:5173',
+      'http://localhost:5174',
       'http://localhost:3000',
       'http://cinetrip.link',
       'https://cinetrip.link',

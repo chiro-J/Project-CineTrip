@@ -153,21 +153,21 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
     const mockData = {
       "photo-1": {
         id: "photo-1",
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         location: "도쿄, 일본",
         description: "인셉션 촬영지입니다.",
       },
       "photo-2": {
         id: "photo-2",
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         location: "뉴욕, 미국",
         description: "어벤져스 촬영지입니다.",
       },
       "photo-3": {
         id: "photo-3",
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         location: "런던, 영국",
         description: "해리포터 촬영지입니다.",

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Camera, MapPin, Upload } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth, type UserPhoto } from "../../contexts/AuthContext";
+import { uploadService } from "../../services/uploadService";
 
 interface PostUploadModalProps {
   isOpen: boolean;
@@ -48,6 +49,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
   const [description, setDescription] = useState<string>("");
   const [tags, setTags] = useState<string>("");
   const [location, setLocation] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // 모달 스크롤 락
   useEffect(() => {
@@ -86,7 +88,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     setSelectedType(typeId);
   };
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     setUploadError("");
 
@@ -114,7 +116,8 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
       return;
     }
 
-    // 이미지 압축 후 업로드
+    // 파일 저장 및 이미지 압축 후 미리보기만 설정 (S3 업로드는 나중에)
+    setSelectedFile(file); // 파일 저장
     compressImage(file).then((compressedDataUrl) => {
       const img = new Image();
       img.onload = () => {
@@ -129,12 +132,12 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
         }
       };
       img.src = compressedDataUrl;
-      setUploadedImage(compressedDataUrl);
-      console.log(`원본 크기: ${(file.size / 1024 / 1024).toFixed(2)}MB, 압축 후: ${(compressedDataUrl.length * 0.75 / 1024 / 1024).toFixed(2)}MB`);
+      setUploadedImage(compressedDataUrl); // 미리보기용으로 base64 이미지 설정
+      console.log(`이미지 미리보기 준비 완료`);
     });
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     console.log(
       "Continue clicked, current step:",
       currentStep,
@@ -157,29 +160,46 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     } else if (currentStep === 3 && location && uploadedImage) {
       setIsUploading(true);
 
-      // 새로운 사진 데이터 생성
-      const newPhoto: UserPhoto = {
-        id: `photo-${Date.now()}`, // 임시 ID 생성
-        src: uploadedImage,
-        alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
-        title: location,
-        location: tags || location,
-        description: description, // 설명 추가
-        likes: 0,
-        likedBy: [], // 좋아요 누른 사용자 목록 초기화
-        authorId: user?.id, // 현재 로그인한 사용자 ID
-        authorName: user?.username, // 현재 로그인한 사용자 이름
-        uploadDate: new Date().toISOString().split('T')[0],
-      };
+      // S3에 실제 업로드
+      try {
+        if (!selectedFile) {
+          throw new Error('업로드할 파일이 없습니다.');
+        }
 
-      // 실제 업로드 로직을 시뮬레이션 (2초 후 완료)
-      setTimeout(() => {
+        // S3에 이미지 업로드
+        const s3ImageUrl = await uploadService.uploadBase64Image(
+          uploadedImage, // 압축된 base64 이미지
+          selectedFile.name,
+          selectedFile.type
+        );
+
+        console.log(`S3 업로드 완료: ${s3ImageUrl}`);
+
+        // 새로운 사진 데이터 생성 (S3 URL 사용)
+        const newPhoto: UserPhoto = {
+          id: `photo-${Date.now()}`, // 임시 ID 생성
+          src: s3ImageUrl, // S3 URL 사용
+          alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
+          title: location,
+          location: tags || location,
+          description: description, // 설명 추가
+          likes: 0,
+          likedBy: [], // 좋아요 누른 사용자 목록 초기화
+          authorId: user?.id, // 현재 로그인한 사용자 ID
+          authorName: user?.username, // 현재 로그인한 사용자 이름
+          uploadDate: new Date().toISOString().split('T')[0],
+        };
+
         // AuthContext의 addPhoto 함수를 사용하여 사진 추가
         addPhoto(newPhoto);
         console.log("게시물 업로드 완료!", newPhoto);
         setIsUploading(false);
         closeModal();
-      }, 2000);
+      } catch (error) {
+        console.error('S3 업로드 실패:', error);
+        setUploadError(error.message || '이미지 업로드에 실패했습니다.');
+        setIsUploading(false);
+      }
     }
   };
 
@@ -216,6 +236,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     setDescription("");
     setTags("");
     setLocation("");
+    setSelectedFile(null);
     onClose();
   };
 
@@ -409,6 +430,16 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
                               </svg>
                             </div>
                           </div>
+                        ) : isUploading ? (
+                          <div className="flex flex-col items-center justify-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-3"></div>
+                            <p className="text-lg text-center font-medium text-emerald-600">
+                              S3에 업로드 중...
+                            </p>
+                            <p className="text-sm text-center text-gray-500">
+                              잠시만 기다려주세요
+                            </p>
+                          </div>
                         ) : (
                           <>
                             <Upload
@@ -534,6 +565,13 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
                           disabled={isUploading}
                         />
                       </div>
+
+                      {/* 에러 표시 */}
+                      {uploadError && currentStep === 3 && (
+                        <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                          {uploadError}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
