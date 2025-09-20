@@ -4,8 +4,6 @@ export class PostResponseDto {
   description?: string;
   imageUrl: string;
   location?: string;
-  likesCount: number;
-  commentsCount: number;
   authorId: number;
   author: {
     id: number;

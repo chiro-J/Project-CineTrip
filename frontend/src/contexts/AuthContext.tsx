@@ -4,8 +4,7 @@ import React, {
   useState,
   type ReactNode,
 } from "react";
-import tmdbApi from "../utils/api";
-import { getImageUrl } from "../types/movie";
+import { api } from "../services/api";
 
 // 사용자 업로드 사진 인터페이스
 export interface UserPhoto {
@@ -49,6 +48,8 @@ interface AuthContextType {
   isLoggedIn: boolean;
   login: (user: UserProfile) => void;
   loginAsUser: () => void;
+  loginAsUser2: () => void;
+  loginAsUser3: () => void;
   loginAsAdmin: () => void;
   logout: () => void;
   isAdmin: boolean;
@@ -60,8 +61,8 @@ interface AuthContextType {
   toggleFollow: (userId: string) => void;
   isFollowing: (userId: string) => boolean;
   addWatchedMovie: (movieId: number, rating?: number, review?: string) => void;
-  toggleBookmark: (movieId: number) => void;
-  isBookmarked: (movieId: number) => boolean;
+  toggleBookmark: (movieId: number) => Promise<void>;
+  isBookmarked: (movieId: number) => Promise<boolean>;
   // 페이지에서 사용할 준비된 데이터
   userPhotosForGallery: any[];
   userPhotosForProfile: any[];
@@ -76,16 +77,6 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// TMDB에서 영화 정보를 가져오는 함수
-const fetchMovieData = async (movieId: number) => {
-  try {
-    const response = await tmdbApi.get(`/movie/${movieId}`);
-    return response.data;
-  } catch (error) {
-    console.error(`Failed to fetch movie ${movieId}:`, error);
-    return null;
-  }
-};
 
 // 일반 사용자 예시 데이터 생성 함수
 const createExampleUserData = (): UserProfile => {
@@ -230,6 +221,116 @@ const createExampleUserData = (): UserProfile => {
     ],
     bookmarkedMovies: [27205, 155, 13, 680], // 인셉션, 다크나이트, 포레스트 검프, 터미네이터
     following: [], // 팔로우 목록 초기화
+  };
+};
+
+// User2 사용자 예시 데이터 생성 함수
+const createExampleUser2Data = (): UserProfile => {
+  return {
+    id: "2",
+    username: "photographer",
+    email: "photographer@example.com",
+    avatarUrl: "https://picsum.photos/seed/photographer/200/200",
+    role: "user",
+    photos: [
+      {
+        id: "photo-user2-1",
+        src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop",
+        alt: "사진작가의 작품 1",
+        title: "도쿄 야경",
+        location: "도쿄, 일본",
+        likes: 89,
+        likedBy: [],
+        authorId: "2",
+        authorName: "photographer",
+        uploadDate: "2024-01-12",
+        movieId: 27205,
+      },
+      {
+        id: "photo-user2-2",
+        src: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop",
+        alt: "사진작가의 작품 2",
+        title: "파리 거리",
+        location: "파리, 프랑스",
+        likes: 156,
+        likedBy: [],
+        authorId: "2",
+        authorName: "photographer",
+        uploadDate: "2024-01-18",
+        movieId: 671,
+      },
+    ],
+    watchedMovies: [
+      {
+        movieId: 27205, // 인셉션
+        watchedAt: "2024-01-08",
+        rating: 5,
+        review: "시각적으로 놀라운 영화!",
+      },
+      {
+        movieId: 671, // 해리포터
+        watchedAt: "2024-01-15",
+        rating: 4,
+        review: "판타지의 매력이 잘 드러난 작품.",
+      },
+    ],
+    bookmarkedMovies: [27205, 671],
+    following: [],
+  };
+};
+
+// User3 사용자 예시 데이터 생성 함수
+const createExampleUser3Data = (): UserProfile => {
+  return {
+    id: "3",
+    username: "traveler",
+    email: "traveler@example.com",
+    avatarUrl: "https://picsum.photos/seed/traveler/200/200",
+    role: "user",
+    photos: [
+      {
+        id: "photo-user3-1",
+        src: "https://images.unsplash.com/photo-1439066615861-d1af74d74000?w=400&h=400&fit=crop",
+        alt: "여행자의 사진 1",
+        title: "뉴욕 스카이라인",
+        location: "뉴욕, 미국",
+        likes: 234,
+        likedBy: [],
+        authorId: "3",
+        authorName: "traveler",
+        uploadDate: "2024-01-20",
+        movieId: 24428,
+      },
+      {
+        id: "photo-user3-2",
+        src: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop&brightness=1.1",
+        alt: "여행자의 사진 2",
+        title: "런던 브리지",
+        location: "런던, 영국",
+        likes: 178,
+        likedBy: [],
+        authorId: "3",
+        authorName: "traveler",
+        uploadDate: "2024-01-25",
+        movieId: 671,
+      },
+    ],
+    watchedMovies: [
+      {
+        movieId: 24428, // 어벤져스
+        watchedAt: "2024-01-10",
+        rating: 5,
+        review: "액션의 진수!",
+      },
+      {
+        movieId: 671, // 해리포터
+        watchedAt: "2024-01-22",
+        rating: 4,
+        review: "마법의 세계가 정말 멋졌어요.",
+      },
+    ],
+    bookmarkedMovies: [24428, 671],
+    following: ["1", "2"],
   };
 };
 
@@ -483,6 +584,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(userData));
   };
 
+  const loginAsUser2 = () => {
+    const userData = createExampleUser2Data();
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
+  const loginAsUser3 = () => {
+    const userData = createExampleUser3Data();
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
   const loginAsAdmin = () => {
     const adminData = createExampleAdminData();
     setUser(adminData);
@@ -627,23 +740,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(updatedUser));
   };
 
-  const toggleBookmark = (movieId: number) => {
+  const toggleBookmark = async (movieId: number) => {
     if (!user) return;
-    const isCurrentlyBookmarked = user.bookmarkedMovies.includes(movieId);
-    const updatedBookmarks = isCurrentlyBookmarked
-      ? user.bookmarkedMovies.filter((id) => id !== movieId)
-      : [...user.bookmarkedMovies, movieId];
+    try {
+      const response = await api.post("/user/me/toggle", { tmdbId: movieId });
+      const { isBookmarked } = response.data;
+      
+      const updatedBookmarks = isBookmarked
+        ? [...user.bookmarkedMovies, movieId]
+        : user.bookmarkedMovies.filter((id) => id !== movieId);
 
-    const updatedUser = {
-      ...user,
-      bookmarkedMovies: updatedBookmarks,
-    };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
+      const updatedUser = {
+        ...user,
+        bookmarkedMovies: updatedBookmarks,
+      };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Failed to toggle bookmark:", error);
+    }
   };
 
-  const isBookmarked = (movieId: number): boolean => {
-    return user?.bookmarkedMovies.includes(movieId) ?? false;
+  const isBookmarked = async (movieId: number): Promise<boolean> => {
+    if (!user) return false;
+    try {
+      const response = await api.get(`/user/me/check?tmdbId=${movieId}`);
+      return response.data.isBookmarked;
+    } catch (error) {
+      console.error("Failed to check bookmark status:", error);
+      return user.bookmarkedMovies.includes(movieId);
+    }
   };
 
   const value: AuthContextType = {
@@ -651,6 +777,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoggedIn: !!user,
     login,
     loginAsUser,
+    loginAsUser2,
+    loginAsUser3,
     loginAsAdmin,
     logout,
     isAdmin: user?.role === "admin",

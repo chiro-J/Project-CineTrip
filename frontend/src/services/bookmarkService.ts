@@ -2,8 +2,9 @@ import { apiHelpers } from "./api";
 
 export interface Bookmark {
   id: number;
-  userId: string;
-  tmdbId: number;
+  user_id: number;
+  tmdb_id: number;
+  created_at: string;
 }
 
 export interface BookmarkResponse {

@@ -22,20 +22,14 @@ export class Post {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column()
-  imageUrl: string;
+  @Column({ type: 'text' })
+  image_url: string;
 
   @Column({ nullable: true })
   location: string;
 
-  @Column({ default: 0 })
-  likesCount: number;
-
-  @Column({ default: 0 })
-  commentsCount: number;
-
   @Column()
-  authorId: number;
+  author_id: number;
 
   @ManyToOne(() => User, (user) => user.posts, { onDelete: 'CASCADE' })
   author: User;

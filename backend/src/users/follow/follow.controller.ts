@@ -10,23 +10,32 @@ import { FollowService } from './follow.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 import { User } from '../entities/user.entity';
 
-@Controller('follow')
+@Controller('user')
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
-  @Post(':userId/toggle')
+  @Post(':userId/follow')
   @UseGuards(JwtAuthGuard)
   async toggleFollow(
     @Param('userId') userId: string,
     @Request() req: any,
   ): Promise<{ isFollowing: boolean; followersCount: number }> {
-    return this.followService.toggleFollow(
-      parseInt(req.user.id),
-      parseInt(userId),
-    );
+    console.log('Follow request - req.user:', req.user);
+    console.log('Follow request - userId param:', userId);
+    
+    const followerId = parseInt(req.user.id || req.user.userId);
+    const followingId = parseInt(userId);
+    
+    console.log('Parsed IDs - followerId:', followerId, 'followingId:', followingId);
+    
+    if (isNaN(followerId) || isNaN(followingId)) {
+      throw new Error(`Invalid IDs: followerId=${followerId}, followingId=${followingId}`);
+    }
+    
+    return this.followService.toggleFollow(followerId, followingId);
   }
 
-  @Get(':userId/status')
+  @Get(':userId/follow')
   @UseGuards(JwtAuthGuard)
   async getFollowStatus(
     @Param('userId') userId: string,
@@ -67,5 +76,22 @@ export class FollowController {
       parseInt(userId),
     );
     return { followingCount };
+  }
+
+  @Delete(':userId/follow/:followId')
+  @UseGuards(JwtAuthGuard)
+  async removeFollow(
+    @Param('userId') userId: string,
+    @Param('followId') followId: string,
+    @Request() req: any,
+  ): Promise<void> {
+    const followerId = parseInt(req.user.id);
+    const followingId = parseInt(userId);
+    
+    if (followerId !== followingId) {
+      throw new Error('You can only remove your own follows');
+    }
+    
+    return this.followService.removeFollow(parseInt(followId), followerId);
   }
 }

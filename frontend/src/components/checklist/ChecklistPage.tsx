@@ -206,18 +206,9 @@ const ChecklistDisplay: FC<{
 const ChecklistPage: FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [viewState, setViewState] = useState<ViewState>(() => {
-    // 로컬 스토리지에서 체크리스트 확인하여 초기 상태 설정
-    const savedChecklists = localStorage.getItem("userChecklists");
-    const checklists = savedChecklists ? JSON.parse(savedChecklists) : [];
-    return checklists.length > 0 ? "hasChecklist" : "noChecklist";
-  });
+  const [viewState, setViewState] = useState<ViewState>("noChecklist");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [checklists, setChecklists] = useState<ChecklistType[]>(() => {
-    // 로컬 스토리지에서 체크리스트 로드
-    const savedChecklists = localStorage.getItem("userChecklists");
-    return savedChecklists ? JSON.parse(savedChecklists) : [];
-  });
+  const [checklists, setChecklists] = useState<ChecklistType[]>([]);
   const [showAll, setShowAll] = useState(false); // 처음에는 최신 체크리스트만 표시
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -231,30 +222,43 @@ const ChecklistPage: FC = () => {
     navigate("/movies");
   };
 
-  // 북마크된 영화 로드
+  // 북마크된 영화와 체크리스트 로드
   useEffect(() => {
     if (user) {
-      const loadBookmarkedMovies = async () => {
+      const loadData = async () => {
         try {
-          const bookmarks = await bookmarkService.getUserBookmarks(user.id);
+          // 사용자 ID를 문자열로 변환 (admin-001 같은 경우 처리)
+          const userId =
+            user && typeof user.id === "string"
+              ? user.id
+              : typeof user.id === "number"
+              ? String(user.id)
+              : "";
+
+          if (!userId || typeof userId !== "string" || userId.trim() === "") {
+            throw new Error("유효하지 않은 사용자 ID입니다.");
+          }
+
+          // 북마크된 영화 로드
+          const bookmarks = await bookmarkService.getUserBookmarks(userId);
 
           // 북마크된 영화의 상세 정보 가져오기
           const movieDetails = await Promise.all(
             bookmarks.map(async (bookmark) => {
               try {
                 const movieDetail = await tmdbService.getMovieDetails(
-                  bookmark.tmdbId
+                  bookmark.tmdb_id
                 );
                 return {
                   id: bookmark.id,
-                  tmdbId: bookmark.tmdbId,
+                  tmdbId: bookmark.tmdb_id,
                   title: movieDetail.title,
                   movieTitle: movieDetail.title,
                   posterPath: movieDetail.poster_path,
                 };
               } catch (error) {
                 console.error(
-                  `영화 ${bookmark.tmdbId} 상세 정보 로드 실패:`,
+                  `영화 ${bookmark.tmdb_id} 상세 정보 로드 실패:`,
                   error
                 );
                 return null;
@@ -264,24 +268,49 @@ const ChecklistPage: FC = () => {
 
           setBookmarkedMovies(movieDetails.filter(Boolean));
 
-          // 북마크 상태에 따라 viewState 설정
-          if (movieDetails.filter(Boolean).length === 0) {
-            setViewState("noBookmarks");
-          } else if (checklists.length === 0) {
-            setViewState("noChecklist");
-          } else {
+          // DB에서 체크리스트 로드
+          const dbChecklists = await checklistService.getUserChecklists();
+          console.log("DB에서 로드된 체크리스트:", dbChecklists);
+
+          if (dbChecklists && dbChecklists.length > 0) {
+            // DB 데이터를 프론트엔드 형식으로 변환
+            const formattedChecklists = dbChecklists.map(
+              (dbChecklist: any) => ({
+                id: dbChecklist.id,
+                title: `${dbChecklist.movieTitle || "영화"} - ${dbChecklist.travelSchedule?.destinations?.[0] || "여행지"} (${dbChecklist.travelSchedule?.startDate || ""} ~ ${dbChecklist.travelSchedule?.endDate || ""})`,
+                items: dbChecklist.items || [],
+              })
+            );
+
+            setChecklists(formattedChecklists);
             setViewState("hasChecklist");
+          } else {
+            // DB에 체크리스트가 없으면 로컬 스토리지에서 로드
+            const savedChecklists = localStorage.getItem("userChecklists");
+            const localChecklists = savedChecklists
+              ? JSON.parse(savedChecklists)
+              : [];
+            setChecklists(localChecklists);
+
+            // 상태 설정
+            if (movieDetails.filter(Boolean).length === 0) {
+              setViewState("noBookmarks");
+            } else if (localChecklists.length === 0) {
+              setViewState("noChecklist");
+            } else {
+              setViewState("hasChecklist");
+            }
           }
         } catch (error) {
-          console.error("북마크된 영화 로드 실패:", error);
+          console.error("데이터 로드 실패:", error);
           setBookmarkedMovies([]);
           setViewState("noBookmarks");
         }
       };
 
-      loadBookmarkedMovies();
+      loadData();
     }
-  }, [user, checklists.length]);
+  }, [user]);
 
   const handleCreateChecklist = async (data: NewChecklistDataType) => {
     setIsLoading(true);
@@ -311,28 +340,47 @@ const ChecklistPage: FC = () => {
       );
 
       if (response.success) {
-        const newChecklist: ChecklistType = {
-          id: Date.now(),
-          title: `${selectedMovie.movieTitle} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
-          items: response.data.map((item) => ({
-            id: item.id,
-            title: item.title,
-            description: item.description,
-            category: item.category,
-            completed: false,
-          })),
-        };
+        // 체크리스트 생성 성공 후 DB에서 최신 데이터 다시 로드
+        const dbChecklists = await checklistService.getUserChecklists();
+        console.log("체크리스트 생성 후 DB에서 로드된 데이터:", dbChecklists);
 
-        const updatedChecklists = [...checklists, newChecklist];
-        setChecklists(updatedChecklists);
-        // 로컬 스토리지에 저장
-        localStorage.setItem(
-          "userChecklists",
-          JSON.stringify(updatedChecklists)
-        );
-        setViewState("hasChecklist");
-        setShowAll(true); // 모든 체크리스트 표시
-        handleCloseModal();
+        if (dbChecklists && dbChecklists.length > 0) {
+          // DB 데이터를 프론트엔드 형식으로 변환
+          const formattedChecklists = dbChecklists.map((dbChecklist: any) => ({
+            id: dbChecklist.id,
+            title: `${dbChecklist.movieTitle || "영화"} - ${dbChecklist.travelSchedule?.destinations?.[0] || "여행지"} (${dbChecklist.travelSchedule?.startDate || ""} ~ ${dbChecklist.travelSchedule?.endDate || ""})`,
+            items: dbChecklist.items || [],
+          }));
+
+          setChecklists(formattedChecklists);
+          setViewState("hasChecklist");
+          setShowAll(true); // 모든 체크리스트 표시
+          handleCloseModal();
+        } else {
+          // DB에서 로드 실패 시 기존 방식으로 처리
+          const newChecklist: ChecklistType = {
+            id: Date.now(),
+            title: `${selectedMovie.movieTitle} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
+            items: response.data.map((item) => ({
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              category: item.category,
+              completed: false,
+            })),
+          };
+
+          const updatedChecklists = [...checklists, newChecklist];
+          setChecklists(updatedChecklists);
+          // 로컬 스토리지에 저장
+          localStorage.setItem(
+            "userChecklists",
+            JSON.stringify(updatedChecklists)
+          );
+          setViewState("hasChecklist");
+          setShowAll(true); // 모든 체크리스트 표시
+          handleCloseModal();
+        }
       } else {
         throw new Error(response.message || "체크리스트 생성에 실패했습니다.");
       }
@@ -429,7 +477,6 @@ const ChecklistPage: FC = () => {
 
   return (
     <section className="w-full">
-      {" "}
       {/* 임베드 섹션: 높이 고정/배경/패딩 없음 */}
       <main>{renderContent()}</main>
       <CreateChecklistModal

@@ -37,57 +37,40 @@ export class FollowService {
     }
 
     const existingFollow = await this.followRepository.findOne({
-      where: { followerId, followingId },
+      where: { follower_id: followerId, following_id: followingId },
     });
 
     if (existingFollow) {
       await this.followRepository.remove(existingFollow);
-
-      await this.userRepository.update(followerId, {
-        followingCount: () => 'followingCount - 1',
-      });
-      await this.userRepository.update(followingId, {
-        followersCount: () => 'followersCount - 1',
-      });
-
-      const updatedUser = await this.userRepository.findOne({
-        where: { id: followingId },
-      });
+      const followersCount = await this.getFollowersCount(followingId);
       return {
         isFollowing: false,
-        followersCount: updatedUser?.followersCount || 0,
+        followersCount,
       };
     } else {
-      const follow = this.followRepository.create({ followerId, followingId });
+      const follow = this.followRepository.create({ 
+        follower_id: followerId, 
+        following_id: followingId 
+      });
       await this.followRepository.save(follow);
-
-      await this.userRepository.update(followerId, {
-        followingCount: () => 'followingCount + 1',
-      });
-      await this.userRepository.update(followingId, {
-        followersCount: () => 'followersCount + 1',
-      });
-
-      const updatedUser = await this.userRepository.findOne({
-        where: { id: followingId },
-      });
+      const followersCount = await this.getFollowersCount(followingId);
       return {
         isFollowing: true,
-        followersCount: updatedUser?.followersCount || 0,
+        followersCount,
       };
     }
   }
 
   async isFollowing(followerId: number, followingId: number): Promise<boolean> {
     const follow = await this.followRepository.findOne({
-      where: { followerId, followingId },
+      where: { follower_id: followerId, following_id: followingId },
     });
     return !!follow;
   }
 
   async getFollowers(userId: number): Promise<User[]> {
     const follows = await this.followRepository.find({
-      where: { followingId: userId },
+      where: { following_id: userId },
       relations: ['follower'],
     });
 
@@ -96,7 +79,7 @@ export class FollowService {
 
   async getFollowing(userId: number): Promise<User[]> {
     const follows = await this.followRepository.find({
-      where: { followerId: userId },
+      where: { follower_id: userId },
       relations: ['following'],
     });
 
@@ -104,10 +87,22 @@ export class FollowService {
   }
 
   async getFollowersCount(userId: number): Promise<number> {
-    return this.followRepository.count({ where: { followingId: userId } });
+    return this.followRepository.count({ where: { following_id: userId } });
   }
 
   async getFollowingCount(userId: number): Promise<number> {
-    return this.followRepository.count({ where: { followerId: userId } });
+    return this.followRepository.count({ where: { follower_id: userId } });
+  }
+
+  async removeFollow(followId: number, followerId: number): Promise<void> {
+    const follow = await this.followRepository.findOne({
+      where: { id: followId, follower_id: followerId },
+    });
+
+    if (!follow) {
+      throw new NotFoundException('Follow relationship not found');
+    }
+
+    await this.followRepository.remove(follow);
   }
 }

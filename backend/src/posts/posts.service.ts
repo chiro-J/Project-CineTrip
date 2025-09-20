@@ -26,15 +26,29 @@ export class PostsService {
   ): Promise<PostResponseDto> {
     const post = this.postRepository.create({
       ...createPostDto,
-      authorId,
+      author_id: authorId,
     });
 
     const savedPost = await this.postRepository.save(post);
-    return this.findOne(savedPost.id, authorId);
+    
+    // author 관계를 포함해서 다시 조회
+    const postWithAuthor = await this.postRepository.findOne({
+      where: { id: savedPost.id },
+      relations: ['author'],
+    });
+    
+    if (!postWithAuthor) {
+      throw new NotFoundException('Post not found');
+    }
+    
+    return this.mapToResponseDto(postWithAuthor, false);
   }
 
   async findAll(userId?: number): Promise<PostResponseDto[]> {
+    const whereCondition = userId ? { author_id: userId } : {};
+    
     const posts = await this.postRepository.find({
+      where: whereCondition,
       relations: ['author'],
       order: { createdAt: 'DESC' },
     });
@@ -74,7 +88,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.authorId !== userId) {
+    if (post.author_id !== userId) {
       throw new ForbiddenException('You can only update your own posts');
     }
 
@@ -89,7 +103,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.authorId !== userId) {
+    if (post.author_id !== userId) {
       throw new ForbiddenException('You can only delete your own posts');
     }
 
@@ -101,7 +115,7 @@ export class PostsService {
     userId?: number,
   ): Promise<PostResponseDto[]> {
     const posts = await this.postRepository.find({
-      where: { authorId },
+      where: { author_id: authorId },
       relations: ['author'],
       order: { createdAt: 'DESC' },
     });
@@ -121,7 +135,7 @@ export class PostsService {
     userId: number,
   ): Promise<boolean> {
     const like = await this.likeRepository.findOne({
-      where: { postId, userId },
+      where: { post_id: postId, user_id: userId },
     });
     return !!like;
   }
@@ -134,15 +148,17 @@ export class PostsService {
       id: post.id,
       title: post.title,
       description: post.description,
-      imageUrl: post.imageUrl,
+      imageUrl: post.image_url,
       location: post.location,
-      likesCount: post.likesCount,
-      commentsCount: post.commentsCount,
-      authorId: post.authorId,
-      author: {
+      authorId: post.author_id,
+      author: post.author ? {
         id: post.author.id,
         username: post.author.username,
-        profileImageUrl: post.author.profileImageUrl,
+        profileImageUrl: post.author.profile_image_url,
+      } : {
+        id: post.author_id,
+        username: 'Unknown User',
+        profileImageUrl: undefined,
       },
       isLiked,
       createdAt: post.createdAt,

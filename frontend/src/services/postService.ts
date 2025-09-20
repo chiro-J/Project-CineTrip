@@ -40,8 +40,15 @@ export const postService = {
 
   async toggleLike(
     postId: string
-  ): Promise<{ likeId: number; likesCount: number }> {
-    const response = await api.post(`/posts/${postId}/likes`);
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
+    const response = await api.post(`/posts/${postId}/likes/toggle`);
     return response.data;
+  },
+
+  async removeLike(
+    postId: string,
+    likeId: string
+  ): Promise<void> {
+    await api.delete(`/posts/${postId}/likes/${likeId}`);
   },
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Camera, MapPin, Upload } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth, type UserPhoto } from "../../contexts/AuthContext";
+import { postService } from "../../services/postService";
 
 interface PostUploadModalProps {
   isOpen: boolean;
@@ -9,7 +10,7 @@ interface PostUploadModalProps {
 }
 
 const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) => {
-  const { addPhoto, user } = useAuth();
+  const { addPhoto } = useAuth();
 
   // 이미지 압축 함수
   const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
@@ -157,29 +158,45 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     } else if (currentStep === 3 && location && uploadedImage) {
       setIsUploading(true);
 
-      // 새로운 사진 데이터 생성
-      const newPhoto: UserPhoto = {
-        id: `photo-${Date.now()}`, // 임시 ID 생성
-        src: uploadedImage,
-        alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
-        title: location,
-        location: tags || location,
-        description: description, // 설명 추가
-        likes: 0,
-        likedBy: [], // 좋아요 누른 사용자 목록 초기화
-        authorId: user?.id, // 현재 로그인한 사용자 ID
-        authorName: user?.username, // 현재 로그인한 사용자 이름
-        uploadDate: new Date().toISOString().split('T')[0],
+      const uploadPost = async () => {
+        try {
+          // 실제 백엔드 API 호출
+          const postData = {
+            title: location,
+            description: description,
+            imageUrl: uploadedImage,
+            location: tags || location,
+          };
+
+          const response = await postService.createPost(postData);
+          console.log("게시물 업로드 완료!", response);
+
+          // AuthContext의 addPhoto 함수를 사용하여 사진 추가
+          const newPhoto: UserPhoto = {
+            id: response.id.toString(), // 백엔드에서 반환된 실제 ID를 string으로 변환
+            src: response.imageUrl,
+            alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
+            title: response.title,
+            location: response.location || "",
+            description: response.description || "",
+            likes: response.likesCount,
+            likedBy: [],
+            authorId: response.authorId.toString(),
+            authorName: response.author.username,
+            uploadDate: new Date().toISOString().split('T')[0],
+          };
+
+          addPhoto(newPhoto);
+          setIsUploading(false);
+          closeModal();
+        } catch (error) {
+          console.error("게시물 업로드 실패:", error);
+          setUploadError("게시물 업로드에 실패했습니다. 다시 시도해주세요.");
+          setIsUploading(false);
+        }
       };
 
-      // 실제 업로드 로직을 시뮬레이션 (2초 후 완료)
-      setTimeout(() => {
-        // AuthContext의 addPhoto 함수를 사용하여 사진 추가
-        addPhoto(newPhoto);
-        console.log("게시물 업로드 완료!", newPhoto);
-        setIsUploading(false);
-        closeModal();
-      }, 2000);
+      uploadPost();
     }
   };
 

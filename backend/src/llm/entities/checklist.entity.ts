@@ -5,25 +5,28 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  ManyToOne,
 } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
+import { Movie } from '../../movies/entities/movie.entity';
 
 @Entity('checklists')
-@Index(['tmdbId', 'userId'], { unique: false })
+@Index(['tmdb_id', 'user_id'], { unique: false })
 export class Checklist {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'bigint' })
-  tmdbId: number;
+  tmdb_id: number;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  movieTitle: string;
+  movie_title: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  userId: string;
+  @Column({ type: 'bigint' })
+  user_id: number;
 
   @Column({ type: 'json' })
-  travelSchedule: {
+  travel_schedule: {
     startDate: string;
     endDate: string;
     destinations: string[];
@@ -47,4 +50,16 @@ export class Checklist {
 
   @Column({ type: 'text', nullable: true })
   notes: string;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
+
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  user: User;
+
+  @ManyToOne(() => Movie, { onDelete: 'CASCADE' })
+  movie: Movie;
 }

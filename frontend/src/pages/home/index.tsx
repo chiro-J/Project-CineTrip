@@ -7,11 +7,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import PostModal from "../../components/post/PostModal";
 
-
 // --- 시각적 확인을 위한 임시 플레이스홀더 컴포넌트 ---
 
 type ImageItem = {
-  id: string | number;
+  id: number;
   src: string;
   alt?: string;
   likes?: number;
@@ -27,13 +26,12 @@ const fetchImages = (page: number): Promise<ImageItem[]> => {
   return new Promise((resolve) => {
     console.log(`Fetching page ${page}...`);
     setTimeout(() => {
-
       const newImages = Array.from({ length: 5 }, (_, i) => {
         const id = page * 5 + i;
 
         const height = Math.floor(Math.random() * 600) + 200; // 200 to 800px
         return {
-          id: `m-${id}`,
+          id: id,
           src: `https://placehold.co/600x${height}/gray/white?text=Image+${id}`,
           alt: `Image ${id}`,
           likes: Math.floor(Math.random() * 2000) + 100,
@@ -174,16 +172,24 @@ const Home = () => {
     // Home 페이지의 임시 이미지들을 다양한 사용자의 게시물로 설정
     const authors = [
       { id: "1", name: "cinephile_user" },
-      { id: "admin-001", name: "Admin" },
-      { id: "user-2", name: "movie_lover" },
-      { id: "user-3", name: "photo_traveler" }
+      { id: "2", name: "Admin" },
+      { id: "3", name: "movie_lover" },
+      { id: "4", name: "photo_traveler" },
     ];
 
-    // ID를 기반으로 작성자를 결정 (일관성 있게)
-    const authorIndex = typeof item.id === 'string'
-      ? parseInt(item.id.split('-')[1] || '0') % authors.length
-      : (item.id as number) % authors.length;
+    // ID가 없거나 유효하지 않은 경우 기본값 사용
+    if (!item || !item.id) {
+      return {
+        id: "0",
+        authorId: "1",
+        authorName: "cinephile_user",
+        location: "아름다운 여행지",
+        description: "멋진 사진입니다!",
+      };
+    }
 
+    // ID를 기반으로 작성자를 결정 (일관성 있게)
+    const authorIndex = item.id % authors.length;
     const author = authors[authorIndex];
 
     return {
@@ -218,7 +224,7 @@ const Home = () => {
           <Header />
         </nav>
       </div>
-      
+
       <div onClick={handleGridClick}>
         <main className="container px-4 py-12 mx-auto sm:px-6 lg:px-8">
           <InfiniteMasonryLayout images={images} />
@@ -266,7 +272,6 @@ const Home = () => {
           descriptionText={getHomeMockPhotoData(selectedItem).description}
         />
       )}
-
 
       {/* 로그인 모달 */}
       <SocialLoginModal

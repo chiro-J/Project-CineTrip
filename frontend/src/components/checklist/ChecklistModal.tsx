@@ -48,26 +48,27 @@ const CreateChecklistModal: FC<{
         setLoadingBookmarks(true);
         try {
           console.log("체크리스트 모달: 북마크 로드 시작, userId:", user.id);
-          const bookmarks = await bookmarkService.getUserBookmarks(user.id);
+          const bookmarks = await bookmarkService.getUserBookmarks(user.id.toString());
           console.log("체크리스트 모달: 북마크 데이터:", bookmarks);
 
           // 북마크된 영화의 상세 정보 가져오기
           const movieDetails = await Promise.all(
             bookmarks.map(async (bookmark) => {
               try {
+                console.log('북마크 데이터:', bookmark);
                 const movieDetail = await tmdbService.getMovieDetails(
-                  bookmark.tmdbId
+                  bookmark.tmdb_id
                 );
                 return {
                   id: bookmark.id,
-                  tmdbId: bookmark.tmdbId,
+                  tmdbId: bookmark.tmdb_id,
                   title: movieDetail.title,
                   movieTitle: movieDetail.title,
                   posterPath: movieDetail.poster_path,
                 };
               } catch (error) {
                 console.error(
-                  `영화 ${bookmark.tmdbId} 상세 정보 로드 실패:`,
+                  `영화 ${bookmark.tmdb_id} 상세 정보 로드 실패:`,
                   error
                 );
                 return null;

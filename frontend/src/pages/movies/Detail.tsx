@@ -121,9 +121,9 @@ const MovieDetails = () => {
   } = useLocationStore();
 
   // 북마크 토글 핸들러
-  const handleBookmarkToggle = () => {
+  const handleBookmarkToggle = async () => {
     if (movieId) {
-      toggleBookmark(parseInt(movieId));
+      await toggleBookmark(parseInt(movieId));
     }
   };
 

@@ -43,6 +43,7 @@ type PostModalProps = {
   photoId?: string;
   locationLabel?: string;
   descriptionText?: string;
+  onDelete?: (photoId: string) => void;
 };
 
 const PostModal: React.FC<PostModalProps> = ({
@@ -53,6 +54,7 @@ const PostModal: React.FC<PostModalProps> = ({
   photoId,
   locationLabel = "Tower Bridge, London",
   descriptionText = "",
+  onDelete,
 }) => {
   // item prop이 null이면 모달을 렌더링하지 않습니다.
   if (!item) return null;
@@ -115,8 +117,12 @@ const PostModal: React.FC<PostModalProps> = ({
           // 댓글 데이터 로드
           const commentsData = await commentService.getCommentsByPost(photoId);
           setComments(commentsData);
+          
+          // 게시물 상세 정보에서 좋아요 상태 확인
+          const postData = await postService.getPost(photoId);
+          setIsLiked(postData.isLiked || false);
         } catch (error) {
-          console.error("Failed to fetch comments:", error);
+          console.error("Failed to fetch post data:", error);
         }
       }
     };
@@ -146,9 +152,10 @@ const PostModal: React.FC<PostModalProps> = ({
   const handleLikeClick = async () => {
     if (photoId && user) {
       try {
-        await postService.toggleLike(photoId);
-        setIsLiked(!isLiked);
-        console.log(`좋아요 ${!isLiked ? "추가" : "취소"}되었습니다!`);
+        // 토글 API 사용
+        const result = await postService.toggleLike(photoId);
+        setIsLiked(result.isLiked);
+        console.log(result.isLiked ? "좋아요가 추가되었습니다!" : "좋아요가 취소되었습니다!");
       } catch (error) {
         console.error("Failed to toggle like:", error);
       }
@@ -188,14 +195,20 @@ const PostModal: React.FC<PostModalProps> = ({
     if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       if (photoId) {
         try {
+          console.log("게시물 삭제 시도:", photoId);
           await postService.deletePost(photoId);
           console.log("게시물이 삭제되었습니다!");
+          
+          // 삭제 성공 후 콜백 호출하여 갤러리 상태 업데이트
+          onDelete?.(photoId);
           onClose(); // 삭제 후 모달 닫기
         } catch (error) {
           console.error("Failed to delete post:", error);
+          alert("게시물 삭제에 실패했습니다. 다시 시도해주세요.");
         }
       } else {
         console.error("사진 ID가 없어 삭제할 수 없습니다.");
+        alert("게시물 ID가 없어 삭제할 수 없습니다.");
       }
     }
   };
@@ -258,6 +271,7 @@ const PostModal: React.FC<PostModalProps> = ({
     setShowAllComments(!showAllComments);
   };
 
+
   const [imgMeta, setImgMeta] = useState<{
     ratio: number;
     mode: "wide" | "tall" | "square";
@@ -278,7 +292,11 @@ const PostModal: React.FC<PostModalProps> = ({
           {/* --- 헤더 --- */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <Avatar size="sm" />
+              <Avatar 
+                size="sm" 
+                src={undefined} // TODO: 작성자 프로필 이미지 URL 추가 필요
+                fallback={authorName?.charAt(0).toUpperCase() || "U"}
+              />
               <span className="font-semibold text-gray-800">{authorName}</span>
             </div>
             {/* Follow 버튼: 로그인한 상태이고 작성자가 본인이 아닐 때만 표시 */}
@@ -351,7 +369,7 @@ const PostModal: React.FC<PostModalProps> = ({
               </button>
             </div>
             {/* 편집/삭제 아이콘: 로그인한 사용자가 작성자인 경우에만 표시 */}
-            {isLoggedIn && user?.id === authorId && (
+            {isLoggedIn && authorId && user?.id === authorId && (
               <div className="flex pr-3">
                 {isEditMode ? (
                   <>
@@ -458,26 +476,32 @@ const PostModal: React.FC<PostModalProps> = ({
           </div>
 
           {/* --- 댓글 입력 --- */}
-          <form
-            onSubmit={handleCommentSubmit}
-            className="flex items-center gap-2 p-4 border-t border-gray-200"
-          >
-            <textarea
-              className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:ring-black focus:border-black"
-              rows={1}
-              placeholder="Comment..."
-              value={newComment}
-              onChange={handleCommentChange}
-            ></textarea>
-            <Button
-              type="submit"
-              size="sm"
-              variant="ghost"
-              disabled={!newComment.trim()}
+          {isLoggedIn ? (
+            <form
+              onSubmit={handleCommentSubmit}
+              className="flex items-center gap-2 p-4 border-t border-gray-200"
             >
-              Post
-            </Button>
-          </form>
+              <textarea
+                className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:ring-black focus:border-black"
+                rows={1}
+                placeholder="Comment..."
+                value={newComment}
+                onChange={handleCommentChange}
+              ></textarea>
+              <Button
+                type="submit"
+                size="sm"
+                variant="ghost"
+                disabled={!newComment.trim()}
+              >
+                Post
+              </Button>
+            </form>
+          ) : (
+            <div className="p-4 text-center text-gray-500 border-t border-gray-200">
+              <p>댓글을 작성하려면 로그인해주세요.</p>
+            </div>
+          )}
 
           {/* --- 댓글 목록 --- */}
           <div className="pl-6 space-y-2">

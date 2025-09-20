@@ -118,4 +118,13 @@ export const checklistService = {
       return this.getMockChecklist(tmdbId, travelSchedule, movieTitle);
     }
   },
+
+  async getUserChecklists(): Promise<any[]> {
+    try {
+      return await apiHelpers.getUserChecklists();
+    } catch (error) {
+      console.warn("체크리스트 조회 실패:", error);
+      return [];
+    }
+  },
 };

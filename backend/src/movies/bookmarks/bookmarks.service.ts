@@ -23,8 +23,8 @@ export class BookmarksService {
     }
 
     const bookmark = this.bookmarkRepository.create({
-      userId,
-      tmdbId,
+      user_id: userId,
+      tmdb_id: tmdbId,
     });
     return await this.bookmarkRepository.save(bookmark);
   }
@@ -37,7 +37,7 @@ export class BookmarksService {
     }
 
     const bookmark = await this.bookmarkRepository.findOne({
-      where: { userId, tmdbId },
+      where: { user_id: userId, tmdb_id: tmdbId },
     });
     if (bookmark) {
       await this.bookmarkRepository.remove(bookmark);
@@ -46,13 +46,13 @@ export class BookmarksService {
 
   async getUserBookmarks(userId: number): Promise<Bookmark[]> {
     return await this.bookmarkRepository.find({
-      where: { userId },
+      where: { user_id: userId },
     });
   }
 
   async isBookmarked(userId: number, tmdbId: number): Promise<boolean> {
     const bookmark = await this.bookmarkRepository.findOne({
-      where: { userId, tmdbId },
+      where: { user_id: userId, tmdb_id: tmdbId },
     });
     return !!bookmark;
   }
@@ -62,7 +62,7 @@ export class BookmarksService {
     tmdbId: number,
   ): Promise<{ isBookmarked: boolean; bookmark?: Bookmark }> {
     const existingBookmark = await this.bookmarkRepository.findOne({
-      where: { userId, tmdbId },
+      where: { user_id: userId, tmdb_id: tmdbId },
     });
 
     if (existingBookmark) {

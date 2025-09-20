@@ -32,22 +32,18 @@ export class CommentsService {
 
     const comment = this.commentRepository.create({
       ...createCommentDto,
-      postId,
-      userId,
+      post_id: postId,
+      user_id: userId,
     });
 
     const savedComment = await this.commentRepository.save(comment);
-
-    await this.postRepository.update(postId, {
-      commentsCount: () => 'commentsCount + 1',
-    });
 
     return this.findOne(savedComment.id);
   }
 
   async findByPost(postId: number): Promise<CommentResponseDto[]> {
     const comments = await this.commentRepository.find({
-      where: { postId },
+      where: { post_id: postId },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });
@@ -75,30 +71,30 @@ export class CommentsService {
       throw new NotFoundException('Comment not found');
     }
 
-    if (comment.userId !== userId) {
+    if (comment.user_id !== userId) {
       throw new ForbiddenException('You can only delete your own comments');
     }
 
     await this.commentRepository.remove(comment);
-
-    await this.postRepository.update(comment.postId, {
-      commentsCount: () => 'commentsCount - 1',
-    });
   }
 
   private mapToResponseDto(comment: Comment): CommentResponseDto {
     return {
       id: comment.id,
       text: comment.text,
-      userId: comment.userId,
-      postId: comment.postId,
-      user: {
+      userId: comment.user_id,
+      postId: comment.post_id,
+      user: comment.user ? {
         id: comment.user.id,
         username: comment.user.username,
-        profileImageUrl: comment.user.profileImageUrl,
+        profileImageUrl: comment.user.profile_image_url || undefined,
+      } : {
+        id: comment.user_id,
+        username: 'Unknown User',
+        profileImageUrl: undefined,
       },
       createdAt: comment.createdAt,
-      updatedAt: comment.updatedAt,
+      updatedAt: comment.createdAt, // updatedAt 필드가 없으므로 createdAt과 동일하게 설정
     };
   }
 }
