@@ -158,6 +158,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   >([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
+
   // 해당 유저의 갤러리 데이터 가져오기
   useEffect(() => {
     const fetchUserGalleryData = async () => {
@@ -196,6 +197,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         } else {
           console.error('Failed to fetch posts:', postsResponse.status, postsResponse.statusText);
         }
+
 
         // 해당 유저의 북마크 가져오기 (영화)
         const bookmarksResponse = await fetch(`http://localhost:3000/user/${userId}/bookmarks`);

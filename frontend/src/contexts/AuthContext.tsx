@@ -81,7 +81,7 @@ interface AuthProviderProps {
 // 일반 사용자 예시 데이터 생성 함수
 const createExampleUserData = (): UserProfile => {
   return {
-    id: "1",
+    id: "123",
     username: "cinephile_user",
     email: "user@example.com",
     avatarUrl: "https://placehold.co/100x100/4F46E5/FFFFFF/png?text=U",
@@ -95,7 +95,7 @@ const createExampleUserData = (): UserProfile => {
         location: "도쿄, 일본",
         likes: 156,
         likedBy: [],
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         uploadDate: "2024-01-15",
         movieId: 27205,
@@ -108,7 +108,7 @@ const createExampleUserData = (): UserProfile => {
         location: "뉴욕, 미국",
         likes: 234,
         likedBy: [],
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         uploadDate: "2024-01-20",
         movieId: 24428,
@@ -121,7 +121,7 @@ const createExampleUserData = (): UserProfile => {
         location: "런던, 영국",
         likes: 189,
         likedBy: [],
-        authorId: "1",
+        authorId: "123",
         authorName: "cinephile_user",
         uploadDate: "2024-01-25",
         movieId: 671,
