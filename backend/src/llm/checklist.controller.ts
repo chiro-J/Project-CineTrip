@@ -16,7 +16,7 @@ export class ChecklistController {
   constructor(private checklistService: ChecklistService) {}
 
 
-  @Get('user/me')
+  @Get('profile/checklist')
   async getChecklistsByUser(@Request() req: any) {
     const userId = req.user.id;
     return this.checklistService.getChecklistsByUser(userId);

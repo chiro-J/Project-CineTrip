@@ -11,7 +11,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { LlmService } from './llm.service';
-import { SceneLocationsService } from '../locations/locations.service';
+import { LocationsService } from '../locations/locations.service';
 import { ChecklistService } from './checklist.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
@@ -19,11 +19,11 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class LlmController {
   constructor(
     private readonly llmService: LlmService,
-    private readonly sceneLocationsService: SceneLocationsService,
+    private readonly sceneLocationsService: LocationsService,
     private readonly checklistService: ChecklistService,
   ) {}
 
-  @Post('scenes')
+  @Post('prompt/scene')
   async generateScenes(@Body() body: { tmdbId: number }) {
     if (!body.tmdbId || typeof body.tmdbId !== 'number') {
       throw new BadRequestException('tmdbId는 숫자여야 합니다.');
@@ -100,7 +100,7 @@ export class LlmController {
     return { items };
   }
 
-  @Post('prompt')
+  @Post('prompt/checklist')
   async generateChecklist(
     @Body()
     body: {
@@ -145,7 +145,7 @@ export class LlmController {
   }
 
   // 체크리스트 REST API 엔드포인트들
-  @Post('prompt/checklist')
+  @Post('checklist')
   @UseGuards(JwtAuthGuard)
   async createChecklist(
     @Body()

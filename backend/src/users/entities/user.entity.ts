@@ -11,6 +11,7 @@ import { Like } from '../../posts/likes/entities/like.entity';
 import { Comment } from '../../posts/comments/entities/comment.entity';
 import { Follow } from '../follow/entities/follow.entity';
 import { Bookmark } from '../../movies/bookmarks/entities/bookmark.entity';
+import { Checklist } from '../../llm/entities/checklist.entity';
 
 @Entity('users')
 export class User {
@@ -26,20 +27,11 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  password: string;
-
   @Column({ nullable: true })
-  profileImageUrl: string;
+  profile_image_url: string;
 
   @Column({ nullable: true })
   bio: string;
-
-  @Column({ default: 0 })
-  followersCount: number;
-
-  @Column({ default: 0 })
-  followingCount: number;
 
   @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
@@ -56,8 +48,11 @@ export class User {
   @OneToMany(() => Follow, (follow) => follow.following)
   followers: Follow[];
 
-  @OneToMany(() => Bookmark, (bookmark) => bookmark.userId)
+  @OneToMany(() => Bookmark, (bookmark) => bookmark.user_id)
   bookmarks: Bookmark[];
+
+  @OneToMany(() => Checklist, (checklist) => checklist.user)
+  checklists: Checklist[];
 
   @CreateDateColumn()
   createdAt: Date;

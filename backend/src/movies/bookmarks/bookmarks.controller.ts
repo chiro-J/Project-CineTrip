@@ -13,12 +13,12 @@ import {
 import { BookmarksService } from './bookmarks.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
 
-@Controller('bookmarks')
+@Controller('user')
 export class BookmarksController {
   constructor(private readonly bookmarksService: BookmarksService) {}
 
   // 인증 필요: 본인의 북마크 관리
-  @Post('me')
+  @Post('me/bookmarks')
   @UseGuards(JwtAuthGuard)
   async addBookmark(
     @Body()
@@ -37,14 +37,14 @@ export class BookmarksController {
     return await this.bookmarksService.addBookmark(userId, tmdbId);
   }
 
-  @Get('me')
+  @Get('me/bookmarks')
   @UseGuards(JwtAuthGuard)
   async getMyBookmarks(@Request() req: any) {
     const userId = req.user.id;
     return await this.bookmarksService.getUserBookmarks(userId);
   }
 
-  @Delete('me/:movieId')
+  @Delete('me/bookmarks/:movieId')
   @UseGuards(JwtAuthGuard)
   async removeMyBookmark(
     @Param('movieId') movieId: string,
@@ -100,7 +100,7 @@ export class BookmarksController {
   }
 
   // 인증 불필요: 다른 사용자의 북마크 조회 (갤러리용)
-  @Get('user/:userId')
+  @Get(':userId/bookmarks')
   async getUserBookmarks(@Param('userId') userId: string) {
     if (!userId) {
       throw new BadRequestException('userId는 필수입니다.');

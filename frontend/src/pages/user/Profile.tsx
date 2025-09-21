@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Avatar } from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
@@ -7,7 +8,8 @@ import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../services/api";
+// import { useAuth } from "../../contexts/AuthContext";
 
 // 테스트용 모의(mock) 데이터입니다. 실제로는 API를 통해 받아오게 됩니다.
 // 이미지 URL은 AWS S3 URL을 가정합니다.
@@ -86,7 +88,11 @@ const EmptyState: React.FC<{
  * 사용자 프로필 페이지 컴포넌트
  */
 const Profile = () => {
-  const { user } = useAuth();
+  const { userId } = useParams<{ userId: string }>();
+  // const { user } = useAuth();
+  const navigate = useNavigate();
+  const [profileUser, setProfileUser] = useState<any>(null);
+  
   // '추천 장소' 섹션 확장 여부를 위한 State
   const [isRecommendedExpanded, setIsRecommendedExpanded] = useState(false);
   // 스크롤 컨테이너를 참조하기 위한 ref
@@ -94,8 +100,28 @@ const Profile = () => {
   // 팔로우 여부를 위한 State
   const [isFollowing, setIsFollowing] = useState(false);
 
+  // URL 파라미터로 받은 userId로 유저 정보 가져오기
+  useEffect(() => {
+    console.log('Profile page - Received userId:', userId);
+    const fetchUser = async () => {
+      if (userId) {
+        try {
+          console.log('Fetching user data for ID:', userId);
+          const response = await api.get(`/user/${userId}`);
+          setProfileUser(response.data);
+          console.log('User data received:', response.data);
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+        }
+      }
+    };
+    fetchUser();
+  }, [userId]);
+
   const handleClick = () => {
-    console.log("Button clicked!");
+    if (userId) {
+      navigate(`/user/${userId}/gallery`);
+    }
   };
 
   const [selectedImage, setSelectedImage] = useState<Item | null>(null);
@@ -144,14 +170,14 @@ const Profile = () => {
           <section className="flex flex-col items-center justify-between mb-20 sm:flex-row">
             <div className="flex items-center">
               <Avatar
-                src={user?.avatarUrl || undefined}
+                src={profileUser?.profileImageUrl || undefined}
                 size="lg"
-                fallback={user?.username?.charAt(0).toUpperCase()}
+                fallback={profileUser?.username?.charAt(0).toUpperCase()}
               />
               <div className="ml-6">
                 <div className="flex items-center gap-2">
                   <h2 className="text-2xl font-bold">
-                    {user?.username || "사용자 이름"}
+                    {profileUser?.username || "사용자 이름"}
                   </h2>
                   <svg
                     className="w-4 h-4 text-gray-400"
@@ -268,7 +294,7 @@ const Profile = () => {
                 />
               ) : (
                 <EmptyState
-                  message={`${user?.username}님이 업로드한 사진이 없습니다.`}
+                  message={`${profileUser?.username || '사용자'}님이 업로드한 사진이 없습니다.`}
                 />
               )}
             </div>
@@ -287,7 +313,7 @@ const Profile = () => {
               <GridLayout images={MOCK_GRID_IMAGES2} className="grid-cols-5" />
             ) : (
               <EmptyState
-                message={`${user?.username}님이 감상한 영화가 없습니다.`}
+                message={`${profileUser?.username || '사용자'}님이 감상한 영화가 없습니다.`}
               />
             )}
           </section>

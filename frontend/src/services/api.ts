@@ -32,16 +32,16 @@ api.interceptors.response.use(
 );
 
 export interface PostData {
-  id: string;
+  id: number;
   title: string;
   description?: string;
   imageUrl: string;
   location?: string;
   likesCount: number;
   commentsCount: number;
-  authorId: string;
+  authorId: number;
   author: {
-    id: string;
+    id: number;
     username: string;
     profileImageUrl?: string;
   };
@@ -51,12 +51,12 @@ export interface PostData {
 }
 
 export interface CommentData {
-  id: string;
+  id: number;
   text: string;
-  userId: string;
-  postId: string;
+  userId: number;
+  postId: number;
   user: {
-    id: string;
+    id: number;
     username: string;
     profileImageUrl?: string;
   };
@@ -93,17 +93,17 @@ export interface TravelSchedule {
 export const apiHelpers = {
   // 북마크 관련
   async toggleBookmark(tmdbId: number): Promise<BookmarkResponse> {
-    const response = await api.post("/bookmarks/me/toggle", { tmdbId });
+    const response = await api.post("/user/me/toggle", { tmdbId });
     return response.data;
   },
 
   async isBookmarked(tmdbId: number): Promise<boolean> {
-    const response = await api.get(`/bookmarks/me/check?tmdbId=${tmdbId}`);
+    const response = await api.get(`/user/me/check?tmdbId=${tmdbId}`);
     return response.data.isBookmarked;
   },
 
   async getUserBookmarks(userId: number): Promise<Bookmark[]> {
-    const response = await api.get(`/bookmarks/user/${userId}`);
+    const response = await api.get(`/user/${userId}/bookmarks`);
     return response.data;
   },
 
@@ -118,6 +118,11 @@ export const apiHelpers = {
       travelSchedule,
       movieTitle,
     });
+    return response.data;
+  },
+
+  async getUserChecklists(): Promise<any> {
+    const response = await api.get("/llm/prompt/checklist/user/me");
     return response.data;
   },
 
@@ -176,9 +181,16 @@ export const apiHelpers = {
   // 좋아요 관련
   async toggleLike(
     postId: string
-  ): Promise<{ likeId: number; likesCount: number }> {
-    const response = await api.post(`/posts/${postId}/likes`);
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
+    const response = await api.post(`/posts/${postId}/likes/toggle`);
     return response.data;
+  },
+
+  async removeLike(
+    postId: string,
+    likeId: string
+  ): Promise<void> {
+    await api.delete(`/posts/${postId}/likes/${likeId}`);
   },
 
   // 촬영지 관련
@@ -194,10 +206,18 @@ export const apiHelpers = {
       };
     }
   ): Promise<SceneLocationsByTmdbResponse> {
-    console.log("API 호출: POST /llm/scenes", { tmdbId, opts });
+    console.log("API 호출: GET /llm/scenes", { tmdbId, opts });
 
     try {
-      const response = await api.post("/llm/scenes", { tmdbId });
+      // 쿼리 파라미터 구성
+      const params = new URLSearchParams();
+      if (opts?.regen) params.append('regen', 'true');
+      if (opts?.movieInfo?.title) params.append('title', opts.movieInfo.title);
+      if (opts?.movieInfo?.originalTitle) params.append('originalTitle', opts.movieInfo.originalTitle);
+      if (opts?.movieInfo?.country) params.append('country', opts.movieInfo.country);
+      if (opts?.movieInfo?.language) params.append('language', opts.movieInfo.language);
+
+      const response = await api.get(`/llm/scenes/${tmdbId}?${params.toString()}`);
       console.log("API 응답 데이터:", response.data);
 
       // 백엔드 응답 형식에 맞게 래핑

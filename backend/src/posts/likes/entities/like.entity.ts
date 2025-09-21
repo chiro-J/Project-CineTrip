@@ -10,16 +10,16 @@ import { User } from '../../../users/entities/user.entity';
 import { Post } from '../../entities/post.entity';
 
 @Entity('likes')
-@Unique(['userId', 'postId'])
+@Unique(['user_id', 'post_id'])
 export class Like {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  userId: number;
+  user_id: number;
 
   @Column()
-  postId: number;
+  post_id: number;
 
   @ManyToOne(() => User, (user) => user.likes, { onDelete: 'CASCADE' })
   user: User;

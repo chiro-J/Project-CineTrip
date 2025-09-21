@@ -9,16 +9,16 @@ import {
 import { User } from '../../entities/user.entity';
 
 @Entity('follows')
-@Unique(['followerId', 'followingId'])
+@Unique(['follower_id', 'following_id'])
 export class Follow {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
-  followerId: number;
+  follower_id: number;
 
   @Column()
-  followingId: number;
+  following_id: number;
 
   @ManyToOne(() => User, (user) => user.following, { onDelete: 'CASCADE' })
   follower: User;

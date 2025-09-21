@@ -34,4 +34,16 @@ export class LikesController {
       parseInt(req.user.id),
     );
   }
+
+  @Post(':postId/likes/toggle')
+  @UseGuards(JwtAuthGuard)
+  async toggleLike(
+    @Param('postId') postId: string,
+    @Request() req: any,
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
+    return this.likesService.toggleLike(
+      parseInt(postId),
+      parseInt(req.user.id),
+    );
+  }
 }

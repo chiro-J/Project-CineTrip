@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { X, Camera, MapPin, Upload } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useAuth, type UserPhoto } from "../../contexts/AuthContext";
+import { postService } from "../../services/postService";
 import { uploadService } from "../../services/uploadService";
 
 interface PostUploadModalProps {
@@ -10,7 +11,7 @@ interface PostUploadModalProps {
 }
 
 const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) => {
-  const { addPhoto, user } = useAuth();
+  const { addPhoto, user } = useAuth(); // user 추가
 
   // 이미지 압축 함수
   const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
@@ -36,6 +37,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
       img.src = URL.createObjectURL(file);
     });
   };
+  
   // 모든 상태 변수들을 명확히 정의
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedType, setSelectedType] = useState<string | null>(null);
@@ -160,46 +162,66 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     } else if (currentStep === 3 && location && uploadedImage) {
       setIsUploading(true);
 
-      // S3에 실제 업로드
-      try {
-        if (!selectedFile) {
-          throw new Error('업로드할 파일이 없습니다.');
+      const uploadPost = async () => {
+        try {
+          // 1. 먼저 S3에 이미지 업로드
+          if (!selectedFile) {
+            throw new Error('업로드할 파일이 없습니다.');
+          }
+
+          console.log('S3에 이미지 업로드 중...');
+          const s3ImageUrl = await uploadService.uploadBase64Image(
+            uploadedImage, // 압축된 base64 이미지
+            selectedFile.name,
+            selectedFile.type
+          );
+
+          console.log(`S3 업로드 완료: ${s3ImageUrl}`);
+
+          // 2. S3 URL과 함께 백엔드 API에 포스트 생성
+          const postData = {
+            title: location,
+            description: description,
+            imageUrl: s3ImageUrl, // S3 URL 사용
+            location: tags || location,
+          };
+
+          console.log('백엔드에 게시물 생성 중...');
+          const response = await postService.createPost(postData);
+          console.log("게시물 업로드 완료!", response);
+
+          // 3. AuthContext의 addPhoto 함수를 사용하여 사진 추가
+          const newPhoto: UserPhoto = {
+            id: response.id.toString(), // 백엔드에서 반환된 실제 ID를 string으로 변환
+            src: response.imageUrl, // 백엔드에서 반환된 이미지 URL (S3 URL)
+            alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
+            title: response.title,
+            location: response.location || "",
+            description: response.description || "",
+            likes: response.likesCount || 0,
+            likedBy: [],
+            authorId: response.authorId?.toString() || user?.id || "",
+            authorName: response.author?.username || user?.username || "",
+            uploadDate: new Date().toISOString().split('T')[0],
+          };
+
+          addPhoto(newPhoto);
+          setIsUploading(false);
+          closeModal();
+        } catch (error) {
+          console.error("게시물 업로드 실패:", error);
+          
+          // 에러 메시지를 더 구체적으로 표시
+          if (error.message?.includes('S3')) {
+            setUploadError("이미지 업로드에 실패했습니다. 다시 시도해주세요.");
+          } else {
+            setUploadError("게시물 업로드에 실패했습니다. 다시 시도해주세요.");
+          }
+          setIsUploading(false);
         }
+      };
 
-        // S3에 이미지 업로드
-        const s3ImageUrl = await uploadService.uploadBase64Image(
-          uploadedImage, // 압축된 base64 이미지
-          selectedFile.name,
-          selectedFile.type
-        );
-
-        console.log(`S3 업로드 완료: ${s3ImageUrl}`);
-
-        // 새로운 사진 데이터 생성 (S3 URL 사용)
-        const newPhoto: UserPhoto = {
-          id: `photo-${Date.now()}`, // 임시 ID 생성
-          src: s3ImageUrl, // S3 URL 사용
-          alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
-          title: location,
-          location: tags || location,
-          description: description, // 설명 추가
-          likes: 0,
-          likedBy: [], // 좋아요 누른 사용자 목록 초기화
-          authorId: user?.id, // 현재 로그인한 사용자 ID
-          authorName: user?.username, // 현재 로그인한 사용자 이름
-          uploadDate: new Date().toISOString().split('T')[0],
-        };
-
-        // AuthContext의 addPhoto 함수를 사용하여 사진 추가
-        addPhoto(newPhoto);
-        console.log("게시물 업로드 완료!", newPhoto);
-        setIsUploading(false);
-        closeModal();
-      } catch (error) {
-        console.error('S3 업로드 실패:', error);
-        setUploadError(error.message || '이미지 업로드에 실패했습니다.');
-        setIsUploading(false);
-      }
+      uploadPost();
     }
   };
 
@@ -434,7 +456,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
                           <div className="flex flex-col items-center justify-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mb-3"></div>
                             <p className="text-lg text-center font-medium text-emerald-600">
-                              S3에 업로드 중...
+                              업로드 중...
                             </p>
                             <p className="text-sm text-center text-gray-500">
                               잠시만 기다려주세요

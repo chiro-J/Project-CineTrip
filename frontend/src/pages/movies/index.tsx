@@ -8,7 +8,7 @@ import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { tmdbService } from "../../services/tmdbService";
 import {
-  type Movie,
+  // type Movie,
   convertMovieToImage,
   type MovieImage,
 } from "../../types/movie";
@@ -20,7 +20,7 @@ const MovieSearchMain = () => {
 
   const [activeFilter, setActiveFilter] = useState("latest");
   const [searchQuery, setSearchQuery] = useState("");
-  const [movies, setMovies] = useState<Movie[]>([]);
+  // const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [movieImages, setMovieImages] = useState<MovieImage[]>([]);
@@ -44,7 +44,7 @@ const MovieSearchMain = () => {
         response = await tmdbService.getLatestMovies();
       }
 
-      setMovies(response.results);
+      // setMovies(response.results);
       const images = response.results.map(convertMovieToImage);
       setMovieImages(images);
     } catch (err) {
@@ -66,7 +66,7 @@ const MovieSearchMain = () => {
         setError(null);
         try {
           const response = await tmdbService.searchMovies(urlQ);
-          setMovies(response.results);
+          // setMovies(response.results);
           const images = response.results.map(convertMovieToImage);
           setMovieImages(images);
         } catch (err) {
@@ -100,7 +100,7 @@ const MovieSearchMain = () => {
     setError(null);
     try {
       const response = await tmdbService.searchMovies(searchQuery);
-      setMovies(response.results);
+      // setMovies(response.results);
       const images = response.results.map(convertMovieToImage);
       setMovieImages(images);
     } catch (err) {

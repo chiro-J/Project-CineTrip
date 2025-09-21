@@ -28,27 +28,21 @@ export class LikesService {
     }
 
     const existingLike = await this.likeRepository.findOne({
-      where: { postId, userId },
+      where: { post_id: postId, user_id: userId },
     });
 
     if (existingLike) {
       throw new ForbiddenException('Already liked this post');
     }
 
-    const like = this.likeRepository.create({ postId, userId });
+    const like = this.likeRepository.create({ post_id: postId, user_id: userId });
     const savedLike = await this.likeRepository.save(like);
 
-    await this.postRepository.update(postId, {
-      likesCount: () => 'likesCount + 1',
-    });
-
-    const updatedPost = await this.postRepository.findOne({
-      where: { id: postId },
-    });
+    const likesCount = await this.getLikesCount(postId);
 
     return {
       likeId: savedLike.id,
-      likesCount: updatedPost?.likesCount || 0,
+      likesCount,
     };
   }
 
@@ -59,21 +53,17 @@ export class LikesService {
       throw new NotFoundException('Like not found');
     }
 
-    if (like.userId !== userId) {
+    if (like.user_id !== userId) {
       throw new ForbiddenException('You can only remove your own likes');
     }
 
     await this.likeRepository.remove(like);
-
-    await this.postRepository.update(like.postId, {
-      likesCount: () => 'likesCount - 1',
-    });
   }
 
   async toggleLike(
     postId: number,
     userId: number,
-  ): Promise<{ isLiked: boolean; likesCount: number }> {
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
     const post = await this.postRepository.findOne({ where: { id: postId } });
 
     if (!post) {
@@ -81,48 +71,37 @@ export class LikesService {
     }
 
     const existingLike = await this.likeRepository.findOne({
-      where: { postId, userId },
+      where: { post_id: postId, user_id: userId },
     });
 
     if (existingLike) {
       await this.likeRepository.remove(existingLike);
-      await this.postRepository.update(postId, {
-        likesCount: () => 'likesCount - 1',
-      });
-
-      const updatedPost = await this.postRepository.findOne({
-        where: { id: postId },
-      });
+      const likesCount = await this.getLikesCount(postId);
       return {
         isLiked: false,
-        likesCount: updatedPost?.likesCount || 0,
+        likesCount,
       };
     } else {
-      const like = this.likeRepository.create({ postId, userId });
-      await this.likeRepository.save(like);
-      await this.postRepository.update(postId, {
-        likesCount: () => 'likesCount + 1',
-      });
-
-      const updatedPost = await this.postRepository.findOne({
-        where: { id: postId },
-      });
+      const like = this.likeRepository.create({ post_id: postId, user_id: userId });
+      const savedLike = await this.likeRepository.save(like);
+      const likesCount = await this.getLikesCount(postId);
       return {
         isLiked: true,
-        likesCount: updatedPost?.likesCount || 0,
+        likesCount,
+        likeId: savedLike.id,
       };
     }
   }
 
   async isPostLikedByUser(postId: number, userId: number): Promise<boolean> {
     const like = await this.likeRepository.findOne({
-      where: { postId, userId },
+      where: { post_id: postId, user_id: userId },
     });
     return !!like;
   }
 
   async getLikesCount(postId: number): Promise<number> {
-    const count = await this.likeRepository.count({ where: { postId } });
+    const count = await this.likeRepository.count({ where: { post_id: postId } });
     return count;
   }
 }
