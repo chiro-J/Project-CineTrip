@@ -249,7 +249,7 @@ export class LlmService {
     {
       "id": 1,
       "name": "촬영지 이름",
-      "scene": "장면 설명",
+      "scene": "장면 설명 (반드시 한국어로 작성)",
       "timestamp": "00:15:30 (영화에서 해당 장면이 나오는 시간)",
       "address": "상세 주소",
       "country": "${country}",
@@ -260,7 +260,9 @@ export class LlmService {
   ]
 }
 
-최대 5개의 촬영지를 포함하고, 좌표는 WGS84 형식으로 제공하세요. 타임스탬프는 "00:00:00" 형식으로 영화에서 해당 장면이 나오는 시간을 제공하세요.`;
+최대 5개의 촬영지를 포함하고, 좌표는 WGS84 형식으로 제공하세요. 타임스탬프는 "00:00:00" 형식으로 영화에서 해당 장면이 나오는 시간을 제공하세요. 
+
+**중요: scene 필드는 반드시 한국어로 작성해주세요.**`;
   }
 
   async generateChecklist(input: ChecklistInput) {

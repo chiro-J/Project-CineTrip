@@ -111,6 +111,7 @@ const MovieDetails = () => {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [bookmarked, setBookmarked] = useState(false);
 
   // 촬영지 관련 상태
   const {
@@ -124,6 +125,9 @@ const MovieDetails = () => {
   const handleBookmarkToggle = async () => {
     if (movieId) {
       await toggleBookmark(parseInt(movieId));
+      // 북마크 상태 업데이트
+      const isBooked = await isBookmarked(parseInt(movieId));
+      setBookmarked(isBooked);
     }
   };
 
@@ -141,6 +145,10 @@ const MovieDetails = () => {
         setError(null);
         const movieData = await tmdbService.getMovieDetails(parseInt(movieId));
         setMovie(movieData);
+        
+        // 북마크 상태 확인
+        const isBooked = await isBookmarked(parseInt(movieId));
+        setBookmarked(isBooked);
       } catch (err) {
         setError("영화 정보를 불러오는데 실패했습니다.");
         console.error("Error loading movie details:", err);
@@ -150,7 +158,7 @@ const MovieDetails = () => {
     };
 
     loadMovieDetails();
-  }, [movieId]);
+  }, [movieId, isBookmarked]);
 
   // 촬영지 정보 로드 (영화 데이터 로드 후 별도로 실행)
   useEffect(() => {
@@ -268,17 +276,11 @@ const MovieDetails = () => {
                 </div>
                 <div className="text-left">
                   <Button
-                    variant={
-                      isBookmarked(parseInt(movieId || "0"))
-                        ? "secondary"
-                        : "primary"
-                    }
+                    variant={bookmarked ? "secondary" : "primary"}
                     onClick={handleBookmarkToggle}
-                    className={`mt-4 ${isBookmarked(parseInt(movieId || "0")) ? "bg-gray-500 hover:bg-gray-600" : ""}`}
+                    className={`mt-4 ${bookmarked ? "bg-gray-500 hover:bg-gray-600" : ""}`}
                   >
-                    {isBookmarked(parseInt(movieId || "0"))
-                      ? "✓ 북마크됨"
-                      : "+ 북마크"}
+                    {bookmarked ? "✓ 북마크됨" : "+ 북마크"}
                   </Button>
                 </div>
               </div>

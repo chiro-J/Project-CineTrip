@@ -41,7 +41,7 @@ export class PostsService {
       throw new NotFoundException('Post not found');
     }
     
-    return this.mapToResponseDto(postWithAuthor, false);
+    return await this.mapToResponseDto(postWithAuthor, false);
   }
 
   async findAll(userId?: number): Promise<PostResponseDto[]> {
@@ -58,7 +58,7 @@ export class PostsService {
         const isLiked = userId
           ? await this.isPostLikedByUser(post.id, userId)
           : false;
-        return this.mapToResponseDto(post, isLiked);
+        return await this.mapToResponseDto(post, isLiked);
       }),
     );
   }
@@ -125,7 +125,7 @@ export class PostsService {
         const isLiked = userId
           ? await this.isPostLikedByUser(post.id, userId)
           : false;
-        return this.mapToResponseDto(post, isLiked);
+        return await this.mapToResponseDto(post, isLiked);
       }),
     );
   }
@@ -140,10 +140,12 @@ export class PostsService {
     return !!like;
   }
 
-  private mapToResponseDto(
+  private async mapToResponseDto(
     post: Post,
     isLiked: boolean = false,
-  ): PostResponseDto {
+  ): Promise<PostResponseDto> {
+    const likesCount = await this.getLikesCount(post.id);
+    
     return {
       id: post.id,
       title: post.title,
@@ -161,8 +163,13 @@ export class PostsService {
         profileImageUrl: undefined,
       },
       isLiked,
+      likesCount,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     };
+  }
+
+  private async getLikesCount(postId: number): Promise<number> {
+    return this.likeRepository.count({ where: { post_id: postId } });
   }
 }

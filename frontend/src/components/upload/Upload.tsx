@@ -170,19 +170,17 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
           }
 
           console.log('S3에 이미지 업로드 중...');
-          const s3ImageUrl = await uploadService.uploadBase64Image(
-            uploadedImage, // 압축된 base64 이미지
-            selectedFile.name,
-            selectedFile.type
+          const uploadResult = await uploadService.uploadImage(
+            selectedFile
           );
 
-          console.log(`S3 업로드 완료: ${s3ImageUrl}`);
+          console.log(`S3 업로드 완료: ${uploadResult.imageUrl}`);
 
           // 2. S3 URL과 함께 백엔드 API에 포스트 생성
           const postData = {
             title: location,
             description: description,
-            imageUrl: s3ImageUrl, // S3 URL 사용
+            image_url: uploadResult.imageUrl, // S3 URL 사용
             location: tags || location,
           };
 
@@ -193,14 +191,14 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
           // 3. AuthContext의 addPhoto 함수를 사용하여 사진 추가
           const newPhoto: UserPhoto = {
             id: response.id.toString(), // 백엔드에서 반환된 실제 ID를 string으로 변환
-            src: response.imageUrl, // 백엔드에서 반환된 이미지 URL (S3 URL)
+            src: response.image_url, // 백엔드에서 반환된 이미지 URL (S3 URL)
             alt: description || `${selectedType === "shooting" ? "촬영지" : "인근 장소"} 사진`,
             title: response.title,
             location: response.location || "",
             description: response.description || "",
             likes: response.likesCount || 0,
             likedBy: [],
-            authorId: response.authorId?.toString() || user?.id || "",
+            authorId: response.authorId || user?.id || 0,
             authorName: response.author?.username || user?.username || "",
             uploadDate: new Date().toISOString().split('T')[0],
           };
@@ -212,7 +210,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
           console.error("게시물 업로드 실패:", error);
           
           // 에러 메시지를 더 구체적으로 표시
-          if (error.message?.includes('S3')) {
+          if (error instanceof Error && error.message?.includes('S3')) {
             setUploadError("이미지 업로드에 실패했습니다. 다시 시도해주세요.");
           } else {
             setUploadError("게시물 업로드에 실패했습니다. 다시 시도해주세요.");

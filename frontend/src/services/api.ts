@@ -35,7 +35,7 @@ export interface PostData {
   id: number;
   title: string;
   description?: string;
-  imageUrl: string;
+  image_url: string;
   location?: string;
   likesCount: number;
   commentsCount: number;
@@ -67,7 +67,7 @@ export interface CommentData {
 export interface CreatePostData {
   title: string;
   description?: string;
-  imageUrl: string;
+  image_url: string;
   location?: string;
 }
 

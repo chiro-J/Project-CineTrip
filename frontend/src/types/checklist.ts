@@ -7,11 +7,18 @@
  * @property {boolean} completed - 완료 여부
  */
 export type ChecklistItemType = {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: string;
+  priority?: 'high' | 'medium' | 'low';
   completed: boolean;
+  location?: {
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+  };
 };
 /**
  * @typedef {object} ChecklistType
@@ -21,8 +28,18 @@ export type ChecklistItemType = {
  */
 export type ChecklistType = {
   id: number;
-  title: string;
+  movie_title?: string;
+  tmdb_id: number;
+  user_id: number;
+  travel_schedule: {
+    startDate: string;
+    endDate: string;
+    destinations: string[];
+  };
   items: ChecklistItemType[];
+  notes?: string;
+  created_at: string;
+  updated_at: string;
 };
 
 /**

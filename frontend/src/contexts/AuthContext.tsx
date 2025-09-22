@@ -15,8 +15,8 @@ export interface UserPhoto {
   location: string;
   description?: string; // 설명 추가
   likes: number;
-  likedBy?: string[]; // 좋아요 누른 사용자 ID 목록
-  authorId?: string; // 작성자 ID 추가
+  likedBy?: (string | number)[]; // 좋아요 누른 사용자 ID 목록 (string 또는 number)
+  authorId?: number; // 작성자 ID 추가
   authorName?: string; // 작성자 이름 추가
   uploadDate: string;
   movieId?: number; // 관련 영화 ID
@@ -32,7 +32,7 @@ export interface WatchedMovie {
 
 // 사용자 프로필 정보 인터페이스
 export interface UserProfile {
-  id: string;
+  id: number;
   username: string;
   email: string;
   avatarUrl: string;
@@ -81,7 +81,7 @@ interface AuthProviderProps {
 // 일반 사용자 예시 데이터 생성 함수
 const createExampleUserData = (): UserProfile => {
   return {
-    id: "123",
+    id: 123,
     username: "cinephile_user",
     email: "user@example.com",
     avatarUrl: "https://placehold.co/100x100/4F46E5/FFFFFF/png?text=U",
@@ -95,7 +95,7 @@ const createExampleUserData = (): UserProfile => {
         location: "도쿄, 일본",
         likes: 156,
         likedBy: [],
-        authorId: "123",
+        authorId: 123,
         authorName: "cinephile_user",
         uploadDate: "2024-01-15",
         movieId: 27205,
@@ -108,7 +108,7 @@ const createExampleUserData = (): UserProfile => {
         location: "뉴욕, 미국",
         likes: 234,
         likedBy: [],
-        authorId: "123",
+        authorId: 123,
         authorName: "cinephile_user",
         uploadDate: "2024-01-20",
         movieId: 24428,
@@ -121,7 +121,7 @@ const createExampleUserData = (): UserProfile => {
         location: "런던, 영국",
         likes: 189,
         likedBy: [],
-        authorId: "123",
+        authorId: 123,
         authorName: "cinephile_user",
         uploadDate: "2024-01-25",
         movieId: 671,
@@ -227,7 +227,7 @@ const createExampleUserData = (): UserProfile => {
 // User2 사용자 예시 데이터 생성 함수
 const createExampleUser2Data = (): UserProfile => {
   return {
-    id: "2",
+    id: 2,
     username: "photographer",
     email: "photographer@example.com",
     avatarUrl: "https://picsum.photos/seed/photographer/200/200",
@@ -241,7 +241,7 @@ const createExampleUser2Data = (): UserProfile => {
         location: "도쿄, 일본",
         likes: 89,
         likedBy: [],
-        authorId: "2",
+        authorId: 2,
         authorName: "photographer",
         uploadDate: "2024-01-12",
         movieId: 27205,
@@ -254,7 +254,7 @@ const createExampleUser2Data = (): UserProfile => {
         location: "파리, 프랑스",
         likes: 156,
         likedBy: [],
-        authorId: "2",
+        authorId: 2,
         authorName: "photographer",
         uploadDate: "2024-01-18",
         movieId: 671,
@@ -282,7 +282,7 @@ const createExampleUser2Data = (): UserProfile => {
 // User3 사용자 예시 데이터 생성 함수
 const createExampleUser3Data = (): UserProfile => {
   return {
-    id: "3",
+    id: 3,
     username: "traveler",
     email: "traveler@example.com",
     avatarUrl: "https://picsum.photos/seed/traveler/200/200",
@@ -296,7 +296,7 @@ const createExampleUser3Data = (): UserProfile => {
         location: "뉴욕, 미국",
         likes: 234,
         likedBy: [],
-        authorId: "3",
+        authorId: 3,
         authorName: "traveler",
         uploadDate: "2024-01-20",
         movieId: 24428,
@@ -309,7 +309,7 @@ const createExampleUser3Data = (): UserProfile => {
         location: "런던, 영국",
         likes: 178,
         likedBy: [],
-        authorId: "3",
+        authorId: 3,
         authorName: "traveler",
         uploadDate: "2024-01-25",
         movieId: 671,
@@ -337,7 +337,7 @@ const createExampleUser3Data = (): UserProfile => {
 // Admin 사용자 예시 데이터 생성 함수
 const createExampleAdminData = (): UserProfile => {
   return {
-    id: "admin-001",
+    id: 1,
     username: "Admin",
     email: "admin@cinetrip.com",
     avatarUrl: "https://picsum.photos/seed/admin/40/40",
@@ -351,7 +351,7 @@ const createExampleAdminData = (): UserProfile => {
         location: "뉴질랜드, 웰링턴",
         likes: 1250,
         likedBy: [],
-        authorId: "admin-001",
+        authorId: 1001,
         authorName: "Admin",
         uploadDate: "2024-01-10",
         movieId: 19995,
@@ -364,7 +364,7 @@ const createExampleAdminData = (): UserProfile => {
         location: "뉴질랜드, 호비튼",
         likes: 2100,
         likedBy: [],
-        authorId: "admin-001",
+        authorId: 1001,
         authorName: "Admin",
         uploadDate: "2024-01-12",
         movieId: 120,
@@ -377,7 +377,7 @@ const createExampleAdminData = (): UserProfile => {
         location: "튀니지, 타투인",
         likes: 1800,
         likedBy: [],
-        authorId: "admin-001",
+        authorId: 1001,
         authorName: "Admin",
         uploadDate: "2024-01-15",
         movieId: 11,
@@ -390,7 +390,7 @@ const createExampleAdminData = (): UserProfile => {
         location: "멕시코, 로스알카트라세스",
         likes: 1650,
         likedBy: [],
-        authorId: "admin-001",
+        authorId: 1001,
         authorName: "Admin",
         uploadDate: "2024-01-18",
         movieId: 597,
@@ -403,7 +403,7 @@ const createExampleAdminData = (): UserProfile => {
         location: "호주, 시드니",
         likes: 1950,
         likedBy: [],
-        authorId: "admin-001",
+        authorId: 1001,
         authorName: "Admin",
         uploadDate: "2024-01-20",
         movieId: 603,
@@ -677,13 +677,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       photos: user.photos.map(photo => {
         if (photo.id === photoId) {
           const likedBy = photo.likedBy || [];
-          const isCurrentlyLiked = likedBy.includes(user.id);
+          const isCurrentlyLiked = likedBy.includes(user.id.toString());
 
           return {
             ...photo,
             likes: isCurrentlyLiked ? photo.likes - 1 : photo.likes + 1,
             likedBy: isCurrentlyLiked
-              ? likedBy.filter(userId => userId !== user.id)
+              ? likedBy.filter(userId => userId !== user.id.toString())
               : [...likedBy, user.id]
           };
         }
@@ -697,13 +697,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isPhotoLiked = (photoId: string): boolean => {
     if (!user) return false;
     const photo = user.photos.find(p => p.id === photoId);
-    return photo?.likedBy?.includes(user.id) || false;
+    return photo?.likedBy?.includes(user.id.toString()) || false;
   };
 
   const toggleFollow = (userId: string) => {
     if (!user) return;
     const following = user.following || [];
-    const isCurrentlyFollowing = following.includes(userId);
+    const isCurrentlyFollowing = following.includes(userId.toString());
 
     const updatedUser = {
       ...user,
@@ -717,7 +717,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const isFollowing = (userId: string): boolean => {
     if (!user) return false;
-    return user.following?.includes(userId) || false;
+    return user.following?.includes(userId.toString()) || false;
   };
 
   const addWatchedMovie = (

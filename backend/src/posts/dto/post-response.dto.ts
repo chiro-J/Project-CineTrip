@@ -11,6 +11,7 @@ export class PostResponseDto {
     profileImageUrl?: string;
   };
   isLiked?: boolean;
+  likesCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }

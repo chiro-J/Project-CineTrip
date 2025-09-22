@@ -91,7 +91,7 @@ const EmptyState: FC<{
 const ChecklistCard: FC<{ checklist: ChecklistType }> = ({ checklist }) => {
   const [items, setItems] = useState<ChecklistItemType[]>(checklist.items);
 
-  const handleToggleItem = (itemId: number) => {
+  const handleToggleItem = (itemId: string) => {
     setItems((prevItems) =>
       prevItems.map((item) =>
         item.id === itemId ? { ...item, completed: !item.completed } : item
@@ -111,7 +111,9 @@ const ChecklistCard: FC<{ checklist: ChecklistType }> = ({ checklist }) => {
 
   return (
     <div className="p-4 text-left bg-white border border-gray-200 rounded-lg">
-      <h3 className="mb-3 font-bold text-left">{checklist.title}</h3>
+      <h3 className="mb-3 font-bold text-left">
+        {checklist.movie_title || `체크리스트 ${checklist.id}`}
+      </h3>
       <div className="space-y-3">
         {sortedItems.map((item) => (
           <div key={item.id} className="flex items-start justify-start gap-3">
@@ -232,8 +234,8 @@ const ChecklistPage: FC = () => {
             user && typeof user.id === "string"
               ? user.id
               : typeof user.id === "number"
-              ? String(user.id)
-              : "";
+                ? String(user.id)
+                : "";
 
           if (!userId || typeof userId !== "string" || userId.trim() === "") {
             throw new Error("유효하지 않은 사용자 ID입니다.");
@@ -277,8 +279,14 @@ const ChecklistPage: FC = () => {
             const formattedChecklists = dbChecklists.map(
               (dbChecklist: any) => ({
                 id: dbChecklist.id,
-                title: `${dbChecklist.movieTitle || "영화"} - ${dbChecklist.travelSchedule?.destinations?.[0] || "여행지"} (${dbChecklist.travelSchedule?.startDate || ""} ~ ${dbChecklist.travelSchedule?.endDate || ""})`,
+                movie_title: dbChecklist.movie_title,
+                tmdb_id: dbChecklist.tmdb_id,
+                user_id: dbChecklist.user_id,
+                travel_schedule: dbChecklist.travel_schedule,
                 items: dbChecklist.items || [],
+                notes: dbChecklist.notes,
+                created_at: dbChecklist.created_at,
+                updated_at: dbChecklist.updated_at,
               })
             );
 
@@ -348,8 +356,14 @@ const ChecklistPage: FC = () => {
           // DB 데이터를 프론트엔드 형식으로 변환
           const formattedChecklists = dbChecklists.map((dbChecklist: any) => ({
             id: dbChecklist.id,
-            title: `${dbChecklist.movieTitle || "영화"} - ${dbChecklist.travelSchedule?.destinations?.[0] || "여행지"} (${dbChecklist.travelSchedule?.startDate || ""} ~ ${dbChecklist.travelSchedule?.endDate || ""})`,
+            movie_title: dbChecklist.movie_title,
+            tmdb_id: dbChecklist.tmdb_id,
+            user_id: dbChecklist.user_id,
+            travel_schedule: dbChecklist.travel_schedule,
             items: dbChecklist.items || [],
+            notes: dbChecklist.notes,
+            created_at: dbChecklist.created_at,
+            updated_at: dbChecklist.updated_at,
           }));
 
           setChecklists(formattedChecklists);
@@ -360,14 +374,26 @@ const ChecklistPage: FC = () => {
           // DB에서 로드 실패 시 기존 방식으로 처리
           const newChecklist: ChecklistType = {
             id: Date.now(),
-            title: `${selectedMovie.movieTitle} - ${data.location} (${data.startDate} ~ ${data.endDate})`,
+            movie_title: selectedMovie.movieTitle,
+            tmdb_id: selectedMovie.tmdbId,
+            user_id: user?.id || 0,
+            travel_schedule: {
+              startDate: data.startDate,
+              endDate: data.endDate,
+              destinations: [data.location],
+            },
             items: response.data.map((item) => ({
               id: item.id,
               title: item.title,
               description: item.description,
               category: item.category,
+              priority: item.priority,
               completed: false,
+              location: item.location,
             })),
+            notes: "",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
 
           const updatedChecklists = [...checklists, newChecklist];
