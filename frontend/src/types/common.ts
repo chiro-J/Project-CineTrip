@@ -18,4 +18,6 @@ export type Item = {
   image_url?: string;
   createdAt?: string;
   updatedAt?: string;
+  // 영화 상세페이지로 이동하기 위한 필드
+  movieId?: number;
 };

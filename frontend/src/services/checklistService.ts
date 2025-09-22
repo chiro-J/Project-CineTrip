@@ -9,11 +9,18 @@ export interface TravelSchedule {
 }
 
 export interface ChecklistItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: string;
+  priority?: 'high' | 'medium' | 'low';
   completed: boolean;
+  location?: {
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface ChecklistResponse {
@@ -49,38 +56,43 @@ export const checklistService = {
     // 기본 체크리스트 데이터 반환
     const mockData: ChecklistItem[] = [
       {
-        id: 1,
+        id: "1",
         title: "여행 준비물 체크",
         description: "여행에 필요한 기본 준비물들을 확인하세요.",
         category: "준비물",
+        priority: "high",
         completed: false,
       },
       {
-        id: 2,
+        id: "2",
         title: "숙소 예약",
         description: "여행 기간에 맞는 숙소를 미리 예약하세요.",
         category: "숙박",
+        priority: "high",
         completed: false,
       },
       {
-        id: 3,
+        id: "3",
         title: "교통편 확인",
         description: "목적지까지의 교통편을 미리 확인하고 예약하세요.",
         category: "교통",
+        priority: "medium",
         completed: false,
       },
       {
-        id: 4,
+        id: "4",
         title: "현지 정보 조사",
         description: "여행지의 날씨, 문화, 관광지 등을 미리 조사하세요.",
         category: "정보",
+        priority: "medium",
         completed: false,
       },
       {
-        id: 5,
+        id: "5",
         title: "여행 보험 가입",
         description: "해외여행의 경우 여행보험 가입을 고려하세요.",
         category: "보험",
+        priority: "low",
         completed: false,
       },
     ];

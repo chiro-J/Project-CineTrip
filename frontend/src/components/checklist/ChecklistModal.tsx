@@ -107,7 +107,7 @@ const CreateChecklistModal: FC<{
           }
 
           const response = await fetch(
-            `http://localhost:3000/llm/prompt/scene/${selectedMovie}?${params}`
+            `http://localhost:3000/api/llm/prompt/scene/${selectedMovie}?${params}`
           );
           const data = await response.json();
           setSceneLocations(data.items || []);

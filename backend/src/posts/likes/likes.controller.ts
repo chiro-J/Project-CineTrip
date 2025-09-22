@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Param,
   UseGuards,
   Request,
@@ -33,6 +34,20 @@ export class LikesController {
       parseInt(likeId),
       parseInt(req.user.id),
     );
+  }
+
+  @Get(':postId/likes')
+  @UseGuards(JwtAuthGuard)
+  async getLikeStatus(
+    @Param('postId') postId: string,
+    @Request() req: any,
+  ): Promise<{ isLiked: boolean; likesCount: number }> {
+    const isLiked = await this.likesService.isPostLikedByUser(
+      parseInt(postId),
+      parseInt(req.user.id),
+    );
+    const likesCount = await this.likesService.getLikesCount(parseInt(postId));
+    return { isLiked, likesCount };
   }
 
   @Post(':postId/likes/toggle')

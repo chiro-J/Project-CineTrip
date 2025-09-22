@@ -93,7 +93,10 @@ const PostResults = ({ searchQuery }: { searchQuery: string }) => {
         <GridLayout images={posts} className="md:grid-cols-3 lg:grid-cols-4" />
       </div>
       {selectedItem && (
-        <PostModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <PostModal 
+          item={selectedItem} 
+          onClose={() => setSelectedItem(null)}
+        />
       )}
     </section>
   );

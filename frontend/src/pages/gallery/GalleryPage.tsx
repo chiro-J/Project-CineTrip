@@ -140,7 +140,23 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
     useAuth();
 
   // 현재 사용자와 URL의 userId를 비교하여 isOwner 결정
-  const isOwner = propIsOwner ?? (user?.id?.toString() === userId);
+  // /profile/gallery 경로에서는 userId가 없으므로 로그인한 사용자가 소유자
+  // /user/:userId/gallery 경로에서는 userId(string)와 현재 사용자 ID(number)를 비교
+  const isOwner =
+    propIsOwner ??
+    (!userId
+      ? true // /profile/gallery 경로 - 로그인한 사용자가 소유자
+      : user?.id?.toString() === userId); // /user/:userId/gallery 경로 - ID 비교 (number를 string으로 변환)
+
+  // 디버깅: 소유자 확인 로직 검증 (개발 환경에서만)
+  if (process.env.NODE_ENV === "development") {
+    console.log("=== 소유자 확인 디버깅 ===");
+    console.log("현재 경로:", window.location.pathname);
+    console.log("user?.id (number):", user?.id);
+    console.log("userId (from URL):", userId);
+    console.log("isOwner (calculated):", isOwner);
+    console.log("========================");
+  }
 
   // 해당 유저의 갤러리 데이터를 위한 상태
   const [targetUserPhotos, setTargetUserPhotos] = useState<Item[]>([]);
@@ -158,22 +174,26 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   >([]);
   const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
-
-  // 해당 유저의 갤러리 데이터 가져오기
+  // 갤러리 데이터 가져오기 (소유자와 다른 사용자 모두)
   useEffect(() => {
-    const fetchUserGalleryData = async () => {
-      if (!userId) return;
-      
+    const fetchGalleryData = async () => {
+      // 소유자인 경우 userId가 없으면 user.id 사용, 있으면 userId 사용
+      const targetUserId = isOwner ? userId || user?.id?.toString() : userId;
+
+      if (!targetUserId) return;
+
       setLoading(true);
       try {
         // 해당 유저의 게시물(사진) 가져오기
-        const postsResponse = await fetch(`http://localhost:3000/posts?userId=${userId}`);
+        const postsResponse = await fetch(
+          `http://localhost:3000/api/posts?userId=${targetUserId}`
+        );
         if (postsResponse.ok) {
           const posts = await postsResponse.json();
-          console.log('API Response posts:', posts);
+          console.log("API Response posts:", posts);
           const photoItems = posts.map((post: any) => {
-            console.log('Individual post:', post);
-            console.log('Post author data:', post.author);
+            console.log("Individual post:", post);
+            console.log("Post author data:", post.author);
             return {
               id: post.id.toString(),
               src: post.imageUrl || post.image_url,
@@ -181,26 +201,31 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
               likes: post.likesCount || 0,
               location: post.location,
               description: post.description,
-              authorId: post.authorId || post.author_id,
-              authorName: post.author?.username || post.author?.displayName || '알 수 없는 사용자',
+              authorId: post.authorId, // 백엔드 PostResponseDto의 authorId 사용
+              authorName: post.author?.username || "알 수 없는 사용자",
               // 백엔드 Post 엔티티 필드들 추가
               title: post.title,
               image_url: post.imageUrl || post.image_url,
-              author_id: post.authorId || post.author_id,
+              author_id: post.authorId, // 백엔드 PostResponseDto의 authorId 사용
               author: post.author,
               createdAt: post.createdAt,
               updatedAt: post.updatedAt,
             };
           });
-          console.log('Processed photo items:', photoItems);
+          console.log("Processed photo items:", photoItems);
           setTargetUserPhotos(photoItems);
         } else {
-          console.error('Failed to fetch posts:', postsResponse.status, postsResponse.statusText);
+          console.error(
+            "Failed to fetch posts:",
+            postsResponse.status,
+            postsResponse.statusText
+          );
         }
 
-
         // 해당 유저의 북마크 가져오기 (영화)
-        const bookmarksResponse = await fetch(`http://localhost:3000/user/${userId}/bookmarks`);
+        const bookmarksResponse = await fetch(
+          `http://localhost:3000/api/user/${targetUserId}/bookmarks`
+        );
         if (bookmarksResponse.ok) {
           const bookmarks = await bookmarksResponse.json();
           const movieItems = bookmarks.map((bookmark: any) => ({
@@ -209,49 +234,98 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             alt: bookmark.title,
             title: bookmark.title,
             releaseDate: bookmark.releaseDate,
+            movieId: bookmark.tmdb_id, // 영화 상세페이지로 이동하기 위한 movieId 추가
           }));
           setTargetUserMovies(movieItems);
           setTargetUserBookmarks(movieItems);
         }
       } catch (error) {
-        console.error('Failed to fetch user gallery data:', error);
+        console.error("Failed to fetch gallery data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    // isOwner가 false일 때만 다른 사용자의 데이터를 가져옴
-    if (!isOwner) {
-      fetchUserGalleryData();
+    // 소유자든 다른 사용자든 데이터 로드
+    fetchGalleryData();
+  }, [userId, isOwner, user?.id]);
+
+  // 사진 업로드 후 갤러리 데이터 새로고침 (소유자만)
+  useEffect(() => {
+    if (isOwner && user && userPhotosForGallery.length > 0) {
+      // userPhotosForGallery가 변경되면 갤러리 데이터 새로고침
+      const refreshGalleryData = async () => {
+        try {
+          const postsResponse = await fetch(
+            `http://localhost:3000/api/posts?userId=${user.id}`
+          );
+          if (postsResponse.ok) {
+            const posts = await postsResponse.json();
+            const photoItems = posts.map((post: any) => ({
+              id: post.id.toString(),
+              src: post.imageUrl || post.image_url,
+              alt: post.title,
+              likes: post.likesCount || 0,
+              location: post.location,
+              description: post.description,
+              authorId: post.authorId || post.author_id,
+              authorName:
+                post.author?.username ||
+                post.author?.displayName ||
+                "알 수 없는 사용자",
+              title: post.title,
+              image_url: post.imageUrl || post.image_url,
+              author_id: post.authorId || post.author_id,
+              author: post.author,
+              createdAt: post.createdAt,
+              updatedAt: post.updatedAt,
+            }));
+            setTargetUserPhotos(photoItems);
+          }
+        } catch (error) {
+          console.error("Failed to refresh gallery data:", error);
+        }
+      };
+
+      refreshGalleryData();
     }
-  }, [userId, isOwner]);
+  }, [isOwner, user, userPhotosForGallery.length]);
 
   // 실제 데이터에서 게시물 정보 찾기 (백엔드 Post 구조 기준)
   const getPhotoData = (itemId: string) => {
-    // 실제 DB에서 가져온 데이터에서 찾기
-    const photoData = targetUserPhotos.find(photo => photo.id.toString() === itemId);
+    // targetUserPhotos에서 찾기
+    const photoData = targetUserPhotos.find(
+      (photo) => photo.id.toString() === itemId
+    );
+
     if (photoData) {
-      console.log('Found photo data:', photoData);
+      console.log("Found photo data:", photoData);
       return {
         id: photoData.id,
-        authorId: photoData.authorId?.toString() || photoData.author_id?.toString() || "unknown",
-        authorName: photoData.authorName || photoData.author?.username || "알 수 없는 사용자",
+        authorId: photoData.authorId || 0,
+        authorName: photoData.authorName || "알 수 없는 사용자",
         location: photoData.location || "위치 정보 없음",
         description: photoData.description || "설명 없음",
-        image_url: photoData.image_url || photoData.src,
-        title: photoData.title,
+        image_url:
+          photoData.image_url ||
+          photoData.src ||
+          "https://via.placeholder.com/400x300?text=No+Image",
+        title: photoData.title || "제목 없음",
         createdAt: photoData.createdAt,
       };
     }
 
-    // 찾지 못한 경우 기본값 반환
-    console.log('Photo data not found for itemId:', itemId);
+    // 찾지 못한 경우 기본값 반환 (이미지 URL 포함)
+    console.log("Photo data not found for itemId:", itemId);
     return {
       id: itemId,
-      authorId: user?.id?.toString() || "unknown",
+      authorId: user?.id || 0,
       authorName: user?.username || "사용자",
       location: "위치 정보 없음",
       description: "설명 없음",
+      image_url: "https://via.placeholder.com/400x300?text=No+Image",
+      title: "제목 없음",
+      createdAt: new Date().toISOString(),
     };
   };
 
@@ -264,6 +338,8 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
   console.log("Target user photos:", targetUserPhotos);
   console.log("Selected photo data:", selectedPhotoData);
   console.log("Current user ID:", user?.id);
+  console.log("Selected photo authorId:", selectedPhotoData?.authorId);
+  console.log("Is owner check:", user?.id === selectedPhotoData?.authorId);
 
   // 북마크된 영화 로드 (본인 갤러리일 때만)
   useEffect(() => {
@@ -281,7 +357,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
           const movieDetails = await Promise.all(
             bookmarks.map(async (bookmark) => {
               try {
-                console.log('북마크 데이터:', bookmark);
+                console.log("북마크 데이터:", bookmark);
                 const movieDetail = await tmdbService.getMovieDetails(
                   bookmark.tmdb_id
                 );
@@ -290,6 +366,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
                   src: getImageUrl(movieDetail.poster_path),
                   alt: movieDetail.title,
                   likes: 0, // 북마크에는 좋아요 수가 없으므로 0으로 설정
+                  movieId: bookmark.tmdb_id, // 영화 상세페이지로 이동하기 위한 movieId 추가
                 };
               } catch (error) {
                 console.error(
@@ -321,6 +398,20 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
       setActiveTab(tabParam as "photos" | "movies" | "bookmarks");
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+
+    const prevWidth = root.style.width;
+    const prevMaxWidth = root.style.maxWidth;
+    root.style.width = "1280px"; // 고정 폭
+    root.style.maxWidth = "none"; // 기존 max-width 영향 차단(선택)
+    return () => {
+      root.style.width = prevWidth;
+      root.style.maxWidth = prevMaxWidth;
+    };
+  }, []);
 
   // 탭 변경 핸들러 - URL 업데이트
   const handleTabChange = (tabId: "photos" | "movies" | "bookmarks") => {
@@ -377,7 +468,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
       case "photos":
         return (
           <TabContent
-            items={isOwner ? userPhotosForGallery : targetUserPhotos}
+            items={targetUserPhotos}
             emptyMessage="업로드한 사진이 없습니다."
             isPhotoTab={true}
             onAddClick={handleAddPhotoClick}
@@ -445,10 +536,10 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
         </main>
         {selectedItem && selectedPhotoData && (
           <PostModal
-            key={`${selectedItem.id}-${(selectedPhotoData as any).location || ''}-${(selectedPhotoData as any).description || ''}`}
+            key={`${selectedItem.id}-${(selectedPhotoData as any).location || ""}-${(selectedPhotoData as any).description || ""}`}
             item={selectedItem}
             onClose={closeModal}
-            authorId={(selectedPhotoData as any).authorId?.toString()}
+            authorId={(selectedPhotoData as any).authorId}
             authorName={(selectedPhotoData as any).authorName}
             photoId={(selectedPhotoData as any).id?.toString()}
             locationLabel={(selectedPhotoData as any).location}

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { LlmService } from './llm.service';
 import { Checklist } from './entities/checklist.entity';
 import { Location } from '../locations/entities/location.entity';
+import { Movie } from '../movies/entities/movie.entity';
 
 interface TravelSchedule {
   startDate: string;
@@ -19,6 +20,8 @@ export class ChecklistService {
     private checklistRepository: Repository<Checklist>,
     @InjectRepository(Location)
     private sceneLocationRepository: Repository<Location>,
+    @InjectRepository(Movie)
+    private movieRepository: Repository<Movie>,
   ) {}
 
   async generateChecklist(
@@ -28,6 +31,18 @@ export class ChecklistService {
     userId?: string,
   ) {
     try {
+      // 먼저 해당 영화가 존재하는지 확인하고, 없으면 생성
+      let movie = await this.movieRepository.findOne({
+        where: { tmdb_id: tmdbId },
+      });
+
+      if (!movie) {
+        console.log(`영화가 존재하지 않아서 생성합니다. tmdbId: ${tmdbId}`);
+        movie = await this.movieRepository.save({
+          tmdb_id: tmdbId,
+        });
+      }
+
       // DB에서 해당 영화의 촬영지 정보 가져오기
       let sceneLocations = await this.sceneLocationRepository.find({
         where: { tmdb_id: tmdbId },
@@ -101,10 +116,10 @@ export class ChecklistService {
 
       // 체크리스트를 DB에 저장
       const checklistData = {
-        tmdbId,
-        movieTitle,
-        userId: userId || undefined,
-        travelSchedule,
+        tmdb_id: tmdbId,
+        movie_title: movieTitle,
+        user_id: userId || undefined,
+        travel_schedule: travelSchedule,
         items: result.items,
         notes: '',
       };

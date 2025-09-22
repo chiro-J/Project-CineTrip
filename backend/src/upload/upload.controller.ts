@@ -16,11 +16,6 @@ interface UploadRequest {
   mimeType: string;
 }
 
-interface Base64UploadRequest {
-  imageData: string;
-  fileName: string;
-  mimeType: string;
-}
 
 @Controller('upload')
 export class UploadController {
@@ -80,38 +75,4 @@ export class UploadController {
     }
   }
 
-  @Post('base64')
-  @HttpCode(HttpStatus.OK)
-  async uploadBase64Image(@Body() body: Base64UploadRequest) {
-    const { imageData, fileName, mimeType } = body;
-
-    if (!imageData || !fileName || !mimeType) {
-      throw new BadRequestException('imageData, fileName, mimeType이 모두 필요합니다.');
-    }
-
-    if (!mimeType.startsWith('image/')) {
-      throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
-    }
-
-    try {
-      // base64 데이터에서 data:image/jpeg;base64, 부분 제거
-      const base64Data = imageData.replace(/^data:image\/[a-z]+;base64,/, '');
-      const buffer = Buffer.from(base64Data, 'base64');
-
-      const imageUrl = await this.uploadService.uploadImageToS3(
-        buffer,
-        fileName,
-        mimeType
-      );
-
-      return {
-        success: true,
-        data: {
-          imageUrl
-        }
-      };
-    } catch (error) {
-      throw new BadRequestException(error.message);
-    }
-  }
 }

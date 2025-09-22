@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   Index,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Movie } from '../../movies/entities/movie.entity';
@@ -22,7 +23,7 @@ export class Checklist {
   @Column({ type: 'varchar', length: 255, nullable: true })
   movie_title: string;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', nullable: true })
   user_id: number;
 
   @Column({ type: 'json' })
@@ -58,8 +59,10 @@ export class Checklist {
   updated_at: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
   @ManyToOne(() => Movie, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'tmdb_id' })
   movie: Movie;
 }

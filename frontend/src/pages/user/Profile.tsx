@@ -92,6 +92,9 @@ const Profile = () => {
   // const { user } = useAuth();
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState<any>(null);
+  const [userPhotos, setUserPhotos] = useState<any[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
   
   // '추천 장소' 섹션 확장 여부를 위한 State
   const [isRecommendedExpanded, setIsRecommendedExpanded] = useState(false);
@@ -118,6 +121,47 @@ const Profile = () => {
     fetchUser();
   }, [userId]);
 
+  // 사용자 사진 가져오기
+  useEffect(() => {
+    const fetchUserPhotos = async () => {
+      if (!userId) return;
+      
+      setPhotosLoading(true);
+      setPhotosError(null);
+      
+      try {
+        console.log('Fetching user photos for ID:', userId);
+        const response = await api.get(`/posts?userId=${userId}`);
+        const photos = response.data.map((post: any) => ({
+          id: post.id.toString(),
+          src: post.image_url || post.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
+          alt: post.title || 'User Photo',
+          likes: post.likesCount || 0,
+          location: post.location || '',
+          description: post.description || '',
+          authorId: post.authorId,
+          authorName: post.author?.username || 'Unknown User',
+          title: post.title,
+          image_url: post.image_url || post.imageUrl,
+          author_id: post.authorId,
+          author: post.author,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        }));
+        
+        setUserPhotos(photos);
+        console.log('User photos received:', photos);
+      } catch (error) {
+        console.error('Failed to fetch user photos:', error);
+        setPhotosError('사진을 불러오는데 실패했습니다.');
+      } finally {
+        setPhotosLoading(false);
+      }
+    };
+
+    fetchUserPhotos();
+  }, [userId]);
+
   const handleClick = () => {
     if (userId) {
       navigate(`/user/${userId}/gallery`);
@@ -132,8 +176,8 @@ const Profile = () => {
     const imgElement = target.closest("img"); // 클릭된 요소가 이미지인지 확인합니다.
 
     if (imgElement && imgElement.src) {
-      // 클릭된 이미지의 src와 일치하는 데이터를 MOCK_GRID_IMAGES3에서 찾습니다.
-      const foundImage = MOCK_GRID_IMAGES1.find(
+      // 클릭된 이미지의 src와 일치하는 데이터를 userPhotos에서 찾습니다.
+      const foundImage = userPhotos.find(
         (img) => img.src === imgElement.src
       );
       if (foundImage) {
@@ -287,9 +331,18 @@ const Profile = () => {
               </Button>
             </div>
             <div onClick={handleUserImageClick} className="cursor-pointer">
-              {MOCK_GRID_IMAGES1.length > 0 ? (
+              {photosLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="w-8 h-8 mb-4 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
+                  <div className="text-lg text-gray-600">사진을 불러오는 중...</div>
+                </div>
+              ) : photosError ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-lg text-red-600">{photosError}</div>
+                </div>
+              ) : userPhotos.length > 0 ? (
                 <GridLayout
-                  images={MOCK_GRID_IMAGES1}
+                  images={userPhotos}
                   className="grid-cols-3"
                 />
               ) : (
@@ -323,6 +376,11 @@ const Profile = () => {
           <PostModal
             item={selectedImage}
             onClose={() => setSelectedImage(null)} // 모달을 닫을 때 state를 null로 초기화합니다.
+            authorId={typeof selectedImage.authorId === 'number' ? selectedImage.authorId : parseInt(selectedImage.authorId?.toString() || '0')}
+            authorName={selectedImage.authorName || profileUser?.username || '알 수 없는 사용자'}
+            photoId={selectedImage.id.toString()}
+            locationLabel={selectedImage.location || selectedImage.alt || '위치 정보 없음'}
+            descriptionText={selectedImage.description || '설명 없음'}
           />
         )}
       </div>

@@ -39,7 +39,7 @@ type PostModalProps = {
   item: ModalItem | null;
   onClose: () => void;
   authorName?: string;
-  authorId?: string;
+  authorId?: number;
   photoId?: string;
   locationLabel?: string;
   descriptionText?: string;
@@ -60,10 +60,18 @@ const PostModal: React.FC<PostModalProps> = ({
   if (!item) return null;
 
   // 디버깅: 전달받은 props 확인
-  console.log("PostModal props:", { photoId, authorId, authorName });
+  console.log("=== PostModal props ===");
+  console.log("photoId:", photoId);
+  console.log("authorId:", authorId, "type:", typeof authorId);
+  console.log("authorName:", authorName, "type:", typeof authorName);
+  console.log("=====================");
 
   // 인증 정보 가져오기
   const { user, isLoggedIn } = useAuth();
+
+  // 좋아요 상태 관리
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   // 편집 모드 상태
   const [isEditMode, setIsEditMode] = useState(false);
@@ -95,8 +103,7 @@ const PostModal: React.FC<PostModalProps> = ({
   const [newComment, setNewComment] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
 
-  // 실제 좋아요 상태 관리 - localStorage에서 독립적으로 관리
-  const [isLiked, setIsLiked] = useState(false);
+  // 팔로우 상태 관리
   const [isUserFollowing, setIsUserFollowing] = useState(false);
 
   // 상태 초기화
@@ -105,7 +112,9 @@ const PostModal: React.FC<PostModalProps> = ({
       if (authorId && user) {
         try {
           // API에서 팔로우 상태 확인
-          const { isFollowing } = await followService.getFollowStatus(authorId);
+          const { isFollowing } = await followService.getFollowStatus(
+            authorId?.toString() || "0"
+          );
           setIsUserFollowing(isFollowing);
         } catch (error) {
           console.error("Failed to fetch follow status:", error);
@@ -117,10 +126,22 @@ const PostModal: React.FC<PostModalProps> = ({
           // 댓글 데이터 로드
           const commentsData = await commentService.getCommentsByPost(photoId);
           setComments(commentsData);
-          
-          // 게시물 상세 정보에서 좋아요 상태 확인
-          const postData = await postService.getPost(photoId);
-          setIsLiked(postData.isLiked || false);
+
+          // 좋아요 상태 확인
+          const response = await fetch(
+            `http://localhost:3000/api/posts/${photoId}/likes`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setIsLiked(data.isLiked);
+            setLikesCount(data.likesCount);
+          }
         } catch (error) {
           console.error("Failed to fetch post data:", error);
         }
@@ -136,7 +157,9 @@ const PostModal: React.FC<PostModalProps> = ({
   const handleFollowClick = async () => {
     if (authorId && user) {
       try {
-        const { isFollowing } = await followService.toggleFollow(authorId);
+        const { isFollowing } = await followService.toggleFollow(
+          authorId?.toString() || "0"
+        );
         setIsUserFollowing(isFollowing);
         console.log(`${isFollowing ? "팔로우" : "언팔로우"}되었습니다!`);
       } catch (error) {
@@ -153,9 +176,27 @@ const PostModal: React.FC<PostModalProps> = ({
     if (photoId && user) {
       try {
         // 토글 API 사용
-        const result = await postService.toggleLike(photoId);
-        setIsLiked(result.isLiked);
-        console.log(result.isLiked ? "좋아요가 추가되었습니다!" : "좋아요가 취소되었습니다!");
+        const response = await fetch(
+          `http://localhost:3000/api/posts/${photoId}/likes/toggle`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          setIsLiked(result.isLiked);
+          setLikesCount(result.likesCount);
+          console.log(
+            result.isLiked
+              ? "좋아요가 추가되었습니다!"
+              : "좋아요가 취소되었습니다!"
+          );
+        }
       } catch (error) {
         console.error("Failed to toggle like:", error);
       }
@@ -198,7 +239,7 @@ const PostModal: React.FC<PostModalProps> = ({
           console.log("게시물 삭제 시도:", photoId);
           await postService.deletePost(photoId);
           console.log("게시물이 삭제되었습니다!");
-          
+
           // 삭제 성공 후 콜백 호출하여 갤러리 상태 업데이트
           onDelete?.(photoId);
           onClose(); // 삭제 후 모달 닫기
@@ -271,7 +312,6 @@ const PostModal: React.FC<PostModalProps> = ({
     setShowAllComments(!showAllComments);
   };
 
-
   const [imgMeta, setImgMeta] = useState<{
     ratio: number;
     mode: "wide" | "tall" | "square";
@@ -292,8 +332,8 @@ const PostModal: React.FC<PostModalProps> = ({
           {/* --- 헤더 --- */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <Avatar 
-                size="sm" 
+              <Avatar
+                size="sm"
                 src={undefined} // TODO: 작성자 프로필 이미지 URL 추가 필요
                 fallback={authorName?.charAt(0).toUpperCase() || "U"}
               />
