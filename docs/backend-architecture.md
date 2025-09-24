@@ -62,3 +62,9 @@ src/
     ├── interceptors/
     └── pipes/
 ```
+
+## 비고
+
+- TypeScript 기반의 NestJS
+- LLM api를 호출하여 전송해서 받은 반환 값을 DB에 저장하는 로직 포함.
+- 실제 AWS 클라우드 서비스와 연동시켜 저장 및 CRUD 로직 구현
