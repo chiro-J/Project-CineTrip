@@ -9,7 +9,7 @@ interface PostUploadModalProps {
 }
 
 const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) => {
-  const { addPhoto, user } = useAuth();
+  const { addPhoto, user, userBookmarksForGallery } = useAuth();
 
   // 이미지 압축 함수
   const compressImage = (file: File, maxWidth = 800, quality = 0.8): Promise<string> => {
@@ -48,6 +48,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
   const [description, setDescription] = useState<string>("");
   const [tags, setTags] = useState<string>("");
   const [location, setLocation] = useState<string>("");
+  const [selectedMovie, setSelectedMovie] = useState<string>(""); // 선택된 영화
 
   // 모달 스크롤 락
   useEffect(() => {
@@ -170,6 +171,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
         authorId: user?.id, // 현재 로그인한 사용자 ID
         authorName: user?.username, // 현재 로그인한 사용자 이름
         uploadDate: new Date().toISOString().split('T')[0],
+        movieId: selectedMovie ? parseInt(selectedMovie) : undefined, // 선택된 영화 ID
       };
 
       // 실제 업로드 로직을 시뮬레이션 (2초 후 완료)
@@ -216,6 +218,7 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
     setDescription("");
     setTags("");
     setLocation("");
+    setSelectedMovie(""); // 선택된 영화 초기화
     onClose();
   };
 
@@ -493,6 +496,31 @@ const PostUploadModal: React.FC<PostUploadModalProps> = ({ isOpen, onClose }) =>
 
                     {/* 위치 정보 */}
                     <div className="space-y-4">
+                      {/* 영화 선택 (촬영지 사진인 경우에만 표시) */}
+                      {selectedType === "shooting" && (
+                        <div>
+                          <label className="block mb-2 text-sm font-medium text-left text-gray-700">
+                            관련 영화 (선택사항)
+                          </label>
+                          <select
+                            value={selectedMovie}
+                            onChange={(e) => setSelectedMovie(e.target.value)}
+                            className="w-full px-4 py-3 mb-2 transition-colors border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            disabled={isUploading}
+                          >
+                            <option value="">영화를 선택하세요 (선택사항)</option>
+                            {userBookmarksForGallery.map((movie) => (
+                              <option key={movie.movieId} value={movie.movieId}>
+                                {movie.alt}
+                              </option>
+                            ))}
+                          </select>
+                          <p className="text-xs text-gray-500">
+                            북마크한 영화 중 선택하시면 촬영지 진행도에 반영됩니다
+                          </p>
+                        </div>
+                      )}
+
                       <div>
                         <label className="block mb-2 text-sm font-medium text-left text-gray-700">
                           위치명 *

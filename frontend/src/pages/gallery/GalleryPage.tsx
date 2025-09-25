@@ -49,6 +49,8 @@ interface TabContentProps {
   onSearchMoviesClick?: () => void;
   isOwner: boolean;
   onItemClick?: (item: Item) => void;
+  activeTab?: string; // activeTab 정보 전달
+  getVisitedLocationsCount?: (movieId: number) => number; // 함수 전달
 }
 
 /**
@@ -62,6 +64,8 @@ const TabContent: React.FC<TabContentProps> = ({
   onSearchMoviesClick,
   isOwner,
   onItemClick,
+  activeTab = "",
+  getVisitedLocationsCount,
 }) => {
   if (!isPhotoTab && items.length === 0) {
     // isOwner가 true일 때만 action 버튼을 생성합니다.
@@ -102,25 +106,38 @@ const TabContent: React.FC<TabContentProps> = ({
           </div>
         </button>
       )}
-      {items.map((item) => (
-        <div
-          key={item.id}
-          role="button"
-          tabIndex={0}
-          onClick={() => onItemClick?.(item)}
-          onKeyDown={(e) => e.key === "Enter" && onItemClick?.(item)}
-          className="rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <Card
+      {items.map((item) => {
+        // 북마크 탭에서 영화 포스터의 경우 진행도 정보 계산
+        const movieId = (item as any).movieId;
+        const isInBookmarkTab = activeTab === "bookmarks"; // 북마크 탭인지 확인
+        const isBookmarkedMovie = isInBookmarkTab && !isPhotoTab && movieId; // 북마크 탭의 영화인 경우
+        const visitedCount = isBookmarkedMovie && getVisitedLocationsCount ? getVisitedLocationsCount(movieId) : 0;
+        const isCompleted = visitedCount >= 5;
+
+        return (
+          <div
             key={item.id}
-            src={item.src}
-            alt={item.alt}
-            likes={item.likes}
-            fit="cover"
-            className={isPhotoTab ? "aspect-square" : "aspect-[2/3]"}
-          />
-        </div>
-      ))}
+            role="button"
+            tabIndex={0}
+            onClick={() => onItemClick?.(item)}
+            onKeyDown={(e) => e.key === "Enter" && onItemClick?.(item)}
+            className="rounded-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <Card
+              key={item.id}
+              src={item.src}
+              alt={item.alt}
+              likes={item.likes}
+              fit="cover"
+              className={isPhotoTab ? "aspect-square" : "aspect-[2/3]"}
+              isBookmarked={isBookmarkedMovie}
+              visitedLocations={visitedCount}
+              totalLocations={5}
+              isCompleted={isCompleted}
+            />
+          </div>
+        );
+      })}
     </>
   );
 };
@@ -134,7 +151,7 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { userPhotosForGallery, userMoviesForGallery, userBookmarksForGallery, user, isFollowing } = useAuth();
+  const { userPhotosForGallery, userMoviesForGallery, userBookmarksForGallery, user, isFollowing, getVisitedLocationsCount } = useAuth();
 
   const [activeTab, setActiveTab] = useState<"photos" | "movies" | "bookmarks">(
     "photos"
@@ -255,6 +272,8 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             onAddClick={handleAddPhotoClick}
             isOwner={isOwner}
             onItemClick={handleItemClick}
+            activeTab={activeTab}
+            getVisitedLocationsCount={getVisitedLocationsCount}
           />
         );
       case "movies":
@@ -264,6 +283,8 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             emptyMessage="감상한 영화가 없습니다."
             isOwner={isOwner}
             onItemClick={handleItemClick}
+            activeTab={activeTab}
+            getVisitedLocationsCount={getVisitedLocationsCount}
           />
         );
       case "bookmarks":
@@ -274,6 +295,8 @@ const GalleryPage: React.FC<{ isOwner?: boolean }> = ({
             onSearchMoviesClick={handleSearchMoviesClick}
             isOwner={isOwner}
             onItemClick={handleItemClick}
+            activeTab={activeTab}
+            getVisitedLocationsCount={getVisitedLocationsCount}
           />
         );
       default:

@@ -68,6 +68,8 @@ interface AuthContextType {
   userMoviesForGallery: any[];
   userMoviesForProfile: any[];
   userBookmarksForGallery: any[];
+  // 촬영지 방문 진행도 계산 함수
+  getVisitedLocationsCount: (movieId: number) => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -134,6 +136,97 @@ const createExampleUserData = (): UserProfile => {
         authorName: "cinephile_user",
         uploadDate: "2024-01-25",
         movieId: 671,
+      },
+      {
+        id: "photo-4",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+4",
+        alt: "인셉션 촬영지 사진 2",
+        title: "인셉션 촬영지 2",
+        location: "로스앤젤레스, 미국",
+        likes: 125,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-01-28",
+        movieId: 27205, // 인셉션 - 같은 영화의 다른 촬영지
+      },
+      {
+        id: "photo-5",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+5",
+        alt: "인셉션 촬영지 사진 3",
+        title: "인셉션 촬영지 3",
+        location: "파리, 프랑스",
+        likes: 98,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-02",
+        movieId: 27205, // 인셉션 - 세 번째 촬영지
+      },
+      {
+        id: "photo-6",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+6",
+        alt: "다크나이트 촬영지 사진",
+        title: "다크나이트 촬영지 완료",
+        location: "시카고1, 미국",
+        likes: 200,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-05",
+        movieId: 155, // 다크나이트 - 첫 번째 촬영지
+      },
+      {
+        id: "photo-7",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+7",
+        alt: "다크나이트 촬영지 사진 2",
+        title: "다크나이트 촬영지 2",
+        location: "시카고2, 미국",
+        likes: 180,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-08",
+        movieId: 155, // 다크나이트 - 두 번째 촬영지
+      },
+      {
+        id: "photo-8",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+8",
+        alt: "다크나이트 촬영지 사진 3",
+        title: "다크나이트 촬영지 3",
+        location: "시카고3, 미국",
+        likes: 165,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-10",
+        movieId: 155, // 다크나이트 - 세 번째 촬영지
+      },
+      {
+        id: "photo-9",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+9",
+        alt: "다크나이트 촬영지 사진 4",
+        title: "다크나이트 촬영지 4",
+        location: "시카고4, 미국",
+        likes: 150,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-12",
+        movieId: 155, // 다크나이트 - 네 번째 촬영지
+      },
+      {
+        id: "photo-10",
+        src: "https://placehold.co/400x400/2B4162/FFFFFF/png?text=Photo+10",
+        alt: "다크나이트 촬영지 사진 5",
+        title: "다크나이트 촬영지 5 - 완료!",
+        location: "시카고5, 미국",
+        likes: 300,
+        likedBy: [],
+        authorId: "1",
+        authorName: "cinephile_user",
+        uploadDate: "2024-02-15",
+        movieId: 155, // 다크나이트 - 다섯 번째 촬영지 (완료!)
       },
     ],
     watchedMovies: [
@@ -646,6 +739,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return user?.bookmarkedMovies.includes(movieId) ?? false;
   };
 
+  // 특정 영화의 방문한 촬영지 개수를 계산하는 함수 (목 데이터)
+  const getVisitedLocationsCount = (movieId: number): number => {
+    // 목 데이터: 각 영화별 방문한 촬영지 개수
+    const mockVisitedData: Record<number, number> = {
+      27205: 3, // 인셉션 - 3곳 방문
+      155: 5,   // 다크나이트 - 5곳 완료 (COMPLETED)
+      13: 1,    // 포레스트 검프 - 1곳 방문
+      680: 0,   // 펄프 픽션 - 아직 방문 안함
+      597: 2,   // 타이타닉 - 2곳 방문
+      603: 4,   // 매트릭스 - 4곳 방문
+      19995: 5, // 아바타 - 5곳 완료 (COMPLETED)
+      120: 1,   // 반지의 제왕 - 1곳 방문
+      11: 0,    // 스타워즈 - 아직 방문 안함
+    };
+
+    return mockVisitedData[movieId] || 0;
+  };
+
   const value: AuthContextType = {
     user,
     isLoggedIn: !!user,
@@ -669,6 +780,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     userMoviesForGallery,
     userMoviesForProfile,
     userBookmarksForGallery,
+    getVisitedLocationsCount,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

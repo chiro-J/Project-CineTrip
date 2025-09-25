@@ -1,4 +1,5 @@
-import { api, CommentData, CreateCommentData } from './api';
+import { api } from './api';
+import type { CommentData, CreateCommentData } from './api';
 
 export const commentService = {
   async getCommentsByPost(postId: string): Promise<CommentData[]> {

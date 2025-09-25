@@ -1,4 +1,5 @@
-import { api, PostData, CreatePostData, UpdatePostData } from './api';
+import { api } from './api';
+import type { PostData, CreatePostData, UpdatePostData } from './api';
 
 export const postService = {
   async getPosts(userId?: string): Promise<PostData[]> {
