@@ -9,6 +9,8 @@ import type { NewChecklistDataType } from "../../types/checklist";
 import { CloseIcon } from "./ChecklistPage";
 import { Button } from "../ui/Button";
 import { useAuth } from "../../contexts/AuthContext";
+import { bookmarkService } from "../../services/bookmarkService";
+import { tmdbService } from "../../services/tmdbService";
 
 /**
  * 체크리스트 생성 모달 컴포넌트
@@ -18,13 +20,15 @@ const CreateChecklistModal: FC<{
   onClose: () => void;
   onCreate: (data: NewChecklistDataType) => void;
 }> = ({ isOpen, onClose, onCreate }) => {
-  const { userBookmarksForGallery } = useAuth();
+  const { user } = useAuth();
   const [selectedMovie, setSelectedMovie] = useState<string>("");
   const [selectedLocation, setSelectedLocation] = useState<string>("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [sceneLocations, setSceneLocations] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [bookmarkedMovies, setBookmarkedMovies] = useState<any[]>([]);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
 
   // 모달 스크롤 락
   useEffect(() => {
@@ -37,6 +41,54 @@ const CreateChecklistModal: FC<{
     }
   }, [isOpen]);
 
+  // 북마크된 영화 로드
+  useEffect(() => {
+    if (isOpen && user) {
+      const loadBookmarkedMovies = async () => {
+        setLoadingBookmarks(true);
+        try {
+          console.log("체크리스트 모달: 북마크 로드 시작, userId:", user.id);
+          const bookmarks = await bookmarkService.getUserBookmarks(user.id.toString());
+          console.log("체크리스트 모달: 북마크 데이터:", bookmarks);
+
+          // 북마크된 영화의 상세 정보 가져오기
+          const movieDetails = await Promise.all(
+            bookmarks.map(async (bookmark) => {
+              try {
+                console.log('북마크 데이터:', bookmark);
+                const movieDetail = await tmdbService.getMovieDetails(
+                  bookmark.tmdb_id
+                );
+                return {
+                  id: bookmark.id,
+                  tmdbId: bookmark.tmdb_id,
+                  title: movieDetail.title,
+                  movieTitle: movieDetail.title,
+                  posterPath: movieDetail.poster_path,
+                };
+              } catch (error) {
+                console.error(
+                  `영화 ${bookmark.tmdb_id} 상세 정보 로드 실패:`,
+                  error
+                );
+                return null;
+              }
+            })
+          );
+
+          setBookmarkedMovies(movieDetails.filter(Boolean));
+        } catch (error) {
+          console.error("북마크된 영화 로드 실패:", error);
+          setBookmarkedMovies([]);
+        } finally {
+          setLoadingBookmarks(false);
+        }
+      };
+
+      loadBookmarkedMovies();
+    }
+  }, [isOpen, user]);
+
   // 영화 선택 시 촬영지 로드
   useEffect(() => {
     if (selectedMovie) {
@@ -44,7 +96,7 @@ const CreateChecklistModal: FC<{
         setLoading(true);
         try {
           // 선택된 영화 정보 가져오기
-          const selectedMovieData = userBookmarksForGallery.find(
+          const selectedMovieData = bookmarkedMovies.find(
             (movie) => movie.tmdbId.toString() === selectedMovie
           );
 
@@ -55,7 +107,7 @@ const CreateChecklistModal: FC<{
           }
 
           const response = await fetch(
-            `http://localhost:3000/llm/prompt/scene/${selectedMovie}?${params}`
+            `http://localhost:3000/api/llm/prompt/scene/${selectedMovie}?${params}`
           );
           const data = await response.json();
           setSceneLocations(data.items || []);
@@ -70,7 +122,7 @@ const CreateChecklistModal: FC<{
     } else {
       setSceneLocations([]);
     }
-  }, [selectedMovie, userBookmarksForGallery]);
+  }, [selectedMovie, bookmarkedMovies]);
 
   if (!isOpen) {
     return null;
@@ -91,11 +143,15 @@ const CreateChecklistModal: FC<{
       return;
     }
 
-    const selectedMovieData = userBookmarksForGallery.find(
+    const selectedMovieData = bookmarkedMovies.find(
       (movie) => movie.tmdbId.toString() === selectedMovie
     );
     const movieTitle = selectedMovieData?.movieTitle || "영화 촬영지";
 
+    // 모달 닫기
+    onClose();
+
+    // 체크리스트 생성 시작
     onCreate({
       movie: movieTitle,
       location: selectedLocation,
@@ -133,15 +189,20 @@ const CreateChecklistModal: FC<{
               }}
               className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-800"
               required
+              disabled={loadingBookmarks}
             >
-              <option value="">북마크된 영화를 선택하세요</option>
-              {userBookmarksForGallery.map((movie) => (
+              <option value="">
+                {loadingBookmarks
+                  ? "북마크 로딩 중..."
+                  : "북마크된 영화를 선택하세요"}
+              </option>
+              {bookmarkedMovies.map((movie) => (
                 <option key={movie.id} value={movie.tmdbId}>
                   {movie.movieTitle}
                 </option>
               ))}
             </select>
-            {userBookmarksForGallery.length === 0 && (
+            {!loadingBookmarks && bookmarkedMovies.length === 0 && (
               <p className="mt-2 text-sm text-gray-500">
                 북마크된 영화가 없습니다. 영화 상세 페이지에서 영화를
                 북마크해주세요.

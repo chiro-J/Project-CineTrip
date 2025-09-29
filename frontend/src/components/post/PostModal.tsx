@@ -1,11 +1,20 @@
 import { useState, useEffect, type SetStateAction } from "react";
-import { Heart, MapPin, Share2, Trash2, Edit3, Save, X, ExternalLink } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  Share2,
+  Trash2,
+  Edit3,
+  Save,
+  X,
+  ExternalLink,
+} from "lucide-react";
 import { Button } from "../ui/Button";
 import { Avatar } from "../ui/Avatar";
 import { useAuth } from "../../contexts/AuthContext";
 import { postService } from "../../services/postService";
-import { commentService } from "../../services/commentService";
 import { followService } from "../../services/followService";
+import { commentService } from "../../services/commentService";
 import type { CommentData } from "../../services/api";
 
 /**
@@ -30,10 +39,11 @@ type PostModalProps = {
   item: ModalItem | null;
   onClose: () => void;
   authorName?: string;
-  authorId?: string;
+  authorId?: number;
   photoId?: string;
   locationLabel?: string;
   descriptionText?: string;
+  onDelete?: (photoId: string) => void;
 };
 
 const PostModal: React.FC<PostModalProps> = ({
@@ -44,20 +54,31 @@ const PostModal: React.FC<PostModalProps> = ({
   photoId,
   locationLabel = "Tower Bridge, London",
   descriptionText = "",
+  onDelete,
 }) => {
   // item prop이 null이면 모달을 렌더링하지 않습니다.
   if (!item) return null;
 
   // 디버깅: 전달받은 props 확인
-  console.log("PostModal props:", { photoId, authorId, authorName });
+  console.log("=== PostModal props ===");
+  console.log("photoId:", photoId);
+  console.log("authorId:", authorId, "type:", typeof authorId);
+  console.log("authorName:", authorName, "type:", typeof authorName);
+  console.log("=====================");
 
   // 인증 정보 가져오기
-  const { user, isLoggedIn, deletePhoto, updatePhoto, togglePhotoLike, isPhotoLiked, toggleFollow, isFollowing } = useAuth();
+  const { user, isLoggedIn } = useAuth();
+
+  // 좋아요 상태 관리
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   // 편집 모드 상태
   const [isEditMode, setIsEditMode] = useState(false);
   const [editedLocation, setEditedLocation] = useState(locationLabel);
-  const [editedDescription, setEditedDescription] = useState(descriptionText || "");
+  const [editedDescription, setEditedDescription] = useState(
+    descriptionText || ""
+  );
 
   // props가 변경될 때마다 편집 상태 업데이트
   useEffect(() => {
@@ -82,30 +103,21 @@ const PostModal: React.FC<PostModalProps> = ({
   const [newComment, setNewComment] = useState("");
   const [showAllComments, setShowAllComments] = useState(false);
 
-  // 실제 좋아요 상태 관리 - localStorage에서 독립적으로 관리
-  const [isLiked, setIsLiked] = useState(false);
+  // 팔로우 상태 관리
   const [isUserFollowing, setIsUserFollowing] = useState(false);
 
   // 상태 초기화
   useEffect(() => {
     const initializeData = async () => {
-      if (photoId && user) {
-        try {
-          // API에서 좋아요 상태 확인
-          const { isLiked: likedStatus } = await postService.getLikeStatus(photoId);
-          setIsLiked(likedStatus);
-        } catch (error) {
-          console.error('Failed to fetch like status:', error);
-        }
-      }
-
       if (authorId && user) {
         try {
           // API에서 팔로우 상태 확인
-          const { isFollowing } = await followService.getFollowStatus(authorId);
+          const { isFollowing } = await followService.getFollowStatus(
+            authorId?.toString() || "0"
+          );
           setIsUserFollowing(isFollowing);
         } catch (error) {
-          console.error('Failed to fetch follow status:', error);
+          console.error("Failed to fetch follow status:", error);
         }
       }
 
@@ -114,8 +126,24 @@ const PostModal: React.FC<PostModalProps> = ({
           // 댓글 데이터 로드
           const commentsData = await commentService.getCommentsByPost(photoId);
           setComments(commentsData);
+
+          // 좋아요 상태 확인
+          const response = await fetch(
+            `http://localhost:3000/api/posts/${photoId}/likes`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+          if (response.ok) {
+            const data = await response.json();
+            setIsLiked(data.isLiked);
+            setLikesCount(data.likesCount);
+          }
         } catch (error) {
-          console.error('Failed to fetch comments:', error);
+          console.error("Failed to fetch post data:", error);
         }
       }
     };
@@ -129,28 +157,53 @@ const PostModal: React.FC<PostModalProps> = ({
   const handleFollowClick = async () => {
     if (authorId && user) {
       try {
-        const { isFollowing } = await followService.toggleFollow(authorId);
+        const { isFollowing } = await followService.toggleFollow(
+          authorId?.toString() || "0"
+        );
         setIsUserFollowing(isFollowing);
-        console.log(`${isFollowing ? '팔로우' : '언팔로우'}되었습니다!`);
+        console.log(`${isFollowing ? "팔로우" : "언팔로우"}되었습니다!`);
       } catch (error) {
-        console.error('Failed to toggle follow:', error);
+        console.error("Failed to toggle follow:", error);
       }
     } else {
-      console.error("작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다.");
+      console.error(
+        "작성자 ID가 없거나 로그인되지 않아 팔로우를 처리할 수 없습니다."
+      );
     }
   };
 
   const handleLikeClick = async () => {
     if (photoId && user) {
       try {
-        const { isLiked: newIsLiked } = await postService.toggleLike(photoId);
-        setIsLiked(newIsLiked);
-        console.log(`좋아요 ${newIsLiked ? '추가' : '취소'}되었습니다!`);
+        // 토글 API 사용
+        const response = await fetch(
+          `http://localhost:3000/api/posts/${photoId}/likes/toggle`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          setIsLiked(result.isLiked);
+          setLikesCount(result.likesCount);
+          console.log(
+            result.isLiked
+              ? "좋아요가 추가되었습니다!"
+              : "좋아요가 취소되었습니다!"
+          );
+        }
       } catch (error) {
-        console.error('Failed to toggle like:', error);
+        console.error("Failed to toggle like:", error);
       }
     } else {
-      console.error("사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다.");
+      console.error(
+        "사진 ID가 없거나 로그인되지 않아 좋아요를 처리할 수 없습니다."
+      );
     }
   };
 
@@ -183,14 +236,20 @@ const PostModal: React.FC<PostModalProps> = ({
     if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
       if (photoId) {
         try {
+          console.log("게시물 삭제 시도:", photoId);
           await postService.deletePost(photoId);
           console.log("게시물이 삭제되었습니다!");
+
+          // 삭제 성공 후 콜백 호출하여 갤러리 상태 업데이트
+          onDelete?.(photoId);
           onClose(); // 삭제 후 모달 닫기
         } catch (error) {
-          console.error('Failed to delete post:', error);
+          console.error("Failed to delete post:", error);
+          alert("게시물 삭제에 실패했습니다. 다시 시도해주세요.");
         }
       } else {
         console.error("사진 ID가 없어 삭제할 수 없습니다.");
+        alert("게시물 ID가 없어 삭제할 수 없습니다.");
       }
     }
   };
@@ -210,7 +269,7 @@ const PostModal: React.FC<PostModalProps> = ({
         console.log("게시물이 수정되었습니다!");
         setIsEditMode(false);
       } catch (error) {
-        console.error('Failed to update post:', error);
+        console.error("Failed to update post:", error);
       }
     } else {
       console.error("사진 ID가 없어 수정할 수 없습니다.");
@@ -236,12 +295,12 @@ const PostModal: React.FC<PostModalProps> = ({
 
     try {
       const newCommentData = await commentService.createComment(photoId, {
-        text: newComment.trim()
+        text: newComment.trim(),
       });
       setComments((prev) => [...prev, newCommentData]);
       setNewComment("");
     } catch (error) {
-      console.error('Failed to create comment:', error);
+      console.error("Failed to create comment:", error);
     }
   };
 
@@ -273,7 +332,11 @@ const PostModal: React.FC<PostModalProps> = ({
           {/* --- 헤더 --- */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <div className="flex items-center gap-3">
-              <Avatar size="sm" />
+              <Avatar
+                size="sm"
+                src={undefined} // TODO: 작성자 프로필 이미지 URL 추가 필요
+                fallback={authorName?.charAt(0).toUpperCase() || "U"}
+              />
               <span className="font-semibold text-gray-800">{authorName}</span>
             </div>
             {/* Follow 버튼: 로그인한 상태이고 작성자가 본인이 아닐 때만 표시 */}
@@ -346,7 +409,7 @@ const PostModal: React.FC<PostModalProps> = ({
               </button>
             </div>
             {/* 편집/삭제 아이콘: 로그인한 사용자가 작성자인 경우에만 표시 */}
-            {isLoggedIn && user?.id === authorId && (
+            {isLoggedIn && authorId && user?.id === authorId && (
               <div className="flex pr-3">
                 {isEditMode ? (
                   <>
@@ -417,7 +480,7 @@ const PostModal: React.FC<PostModalProps> = ({
                     href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(editedLocation || locationLabel || "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer transition-colors flex items-center gap-1"
+                    className="flex items-center gap-1 text-sm text-blue-600 transition-colors cursor-pointer hover:text-blue-800 hover:underline"
                     onClick={(e) => {
                       // 위치 정보가 없으면 링크 클릭 방지
                       if (!editedLocation && !locationLabel) {
@@ -453,26 +516,32 @@ const PostModal: React.FC<PostModalProps> = ({
           </div>
 
           {/* --- 댓글 입력 --- */}
-          <form
-            onSubmit={handleCommentSubmit}
-            className="flex items-center gap-2 p-4 border-t border-gray-200"
-          >
-            <textarea
-              className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:ring-black focus:border-black"
-              rows={1}
-              placeholder="Comment..."
-              value={newComment}
-              onChange={handleCommentChange}
-            ></textarea>
-            <Button
-              type="submit"
-              size="sm"
-              variant="ghost"
-              disabled={!newComment.trim()}
+          {isLoggedIn ? (
+            <form
+              onSubmit={handleCommentSubmit}
+              className="flex items-center gap-2 p-4 border-t border-gray-200"
             >
-              Post
-            </Button>
-          </form>
+              <textarea
+                className="w-full p-2 text-sm border border-gray-200 rounded-md resize-none focus:ring-black focus:border-black"
+                rows={1}
+                placeholder="Comment..."
+                value={newComment}
+                onChange={handleCommentChange}
+              ></textarea>
+              <Button
+                type="submit"
+                size="sm"
+                variant="ghost"
+                disabled={!newComment.trim()}
+              >
+                Post
+              </Button>
+            </form>
+          ) : (
+            <div className="p-4 text-center text-gray-500 border-t border-gray-200">
+              <p>댓글을 작성하려면 로그인해주세요.</p>
+            </div>
+          )}
 
           {/* --- 댓글 목록 --- */}
           <div className="pl-6 space-y-2">

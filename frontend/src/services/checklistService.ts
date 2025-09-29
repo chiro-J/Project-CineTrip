@@ -1,18 +1,26 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+import { apiHelpers } from "./api";
 
 export interface TravelSchedule {
   startDate: string;
   endDate: string;
-  destinations: string[];
+  destinations?: string[];
+  budget?: number;
+  travelers?: number;
 }
 
 export interface ChecklistItem {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: string;
+  priority?: 'high' | 'medium' | 'low';
   completed: boolean;
+  location?: {
+    name: string;
+    address: string;
+    lat: number;
+    lng: number;
+  };
 }
 
 export interface ChecklistResponse {
@@ -28,23 +36,11 @@ export const checklistService = {
     movieTitle?: string
   ): Promise<ChecklistResponse> {
     try {
-      const response = await fetch(`${API_BASE_URL}/llm/prompt/checklist`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tmdbId,
-          travelSchedule,
-          movieTitle,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("체크리스트 생성에 실패했습니다.");
-      }
-
-      return response.json();
+      return await apiHelpers.generateChecklist(
+        tmdbId,
+        travelSchedule,
+        movieTitle
+      );
     } catch (error) {
       console.warn("API 호출 실패, 모킹 데이터 사용:", error);
       // API 호출 실패 시 모킹 데이터 반환
@@ -60,38 +56,43 @@ export const checklistService = {
     // 기본 체크리스트 데이터 반환
     const mockData: ChecklistItem[] = [
       {
-        id: 1,
+        id: "1",
         title: "여행 준비물 체크",
         description: "여행에 필요한 기본 준비물들을 확인하세요.",
         category: "준비물",
+        priority: "high",
         completed: false,
       },
       {
-        id: 2,
+        id: "2",
         title: "숙소 예약",
         description: "여행 기간에 맞는 숙소를 미리 예약하세요.",
         category: "숙박",
+        priority: "high",
         completed: false,
       },
       {
-        id: 3,
+        id: "3",
         title: "교통편 확인",
         description: "목적지까지의 교통편을 미리 확인하고 예약하세요.",
         category: "교통",
+        priority: "medium",
         completed: false,
       },
       {
-        id: 4,
+        id: "4",
         title: "현지 정보 조사",
         description: "여행지의 날씨, 문화, 관광지 등을 미리 조사하세요.",
         category: "정보",
+        priority: "medium",
         completed: false,
       },
       {
-        id: 5,
+        id: "5",
         title: "여행 보험 가입",
         description: "해외여행의 경우 여행보험 가입을 고려하세요.",
         category: "보험",
+        priority: "low",
         completed: false,
       },
     ];
@@ -110,25 +111,32 @@ export const checklistService = {
     destinations: string[],
     movieTitle?: string
   ): Promise<ChecklistResponse> {
-    const params = new URLSearchParams({
-      tmdbId: tmdbId.toString(),
+    const travelSchedule: TravelSchedule = {
       startDate,
       endDate,
-      destinations: destinations.join(","),
-    });
+      destinations,
+      budget: undefined,
+      travelers: undefined,
+    };
 
-    if (movieTitle) {
-      params.append("movieTitle", movieTitle);
+    try {
+      return await apiHelpers.generateChecklist(
+        tmdbId,
+        travelSchedule,
+        movieTitle
+      );
+    } catch (error) {
+      console.warn("API 호출 실패, 모킹 데이터 사용:", error);
+      return this.getMockChecklist(tmdbId, travelSchedule, movieTitle);
     }
+  },
 
-    const response = await fetch(
-      `${API_BASE_URL}/llm/prompt/checklist?${params}`
-    );
-
-    if (!response.ok) {
-      throw new Error("체크리스트 생성에 실패했습니다.");
+  async getUserChecklists(): Promise<any[]> {
+    try {
+      return await apiHelpers.getUserChecklists();
+    } catch (error) {
+      console.warn("체크리스트 조회 실패:", error);
+      return [];
     }
-
-    return response.json();
   },
 };

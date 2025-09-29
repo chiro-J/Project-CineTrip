@@ -1,25 +1,25 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Unique, ManyToOne } from 'typeorm';
 import { User } from '../../../users/entities/user.entity';
 import { Movie } from '../../entities/movie.entity';
 
 @Entity('bookmarks')
-@Unique(['userId', 'tmdbId'])
+@Unique(['user_id', 'tmdb_id'])
 export class Bookmark {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column('uuid')
-  userId: string;
+  @Column()
+  user_id: number;
 
-  @Column('bigint')
-  tmdbId: number;
+  @Column()
+  tmdb_id: number;
 
-  @ManyToOne(() => User, user => user.bookmarks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.bookmarks, { onDelete: 'CASCADE' })
   user: User;
 
-  @ManyToOne(() => Movie, movie => movie.bookmarks, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Movie, { onDelete: 'CASCADE' })
   movie: Movie;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 }

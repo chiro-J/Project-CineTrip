@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Like } from '../likes/entities/like.entity';
@@ -13,8 +14,8 @@ import { Comment } from '../comments/entities/comment.entity';
 
 @Entity('posts')
 export class Post {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
   @Column()
   title: string;
@@ -22,22 +23,17 @@ export class Post {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column()
-  imageUrl: string;
+  @Column({ type: 'text'})
+  image_url: string;
 
   @Column({ nullable: true })
   location: string;
 
-  @Column({ default: 0 })
-  likesCount: number;
-
-  @Column({ default: 0 })
-  commentsCount: number;
-
-  @Column('uuid')
-  authorId: string;
+  @Column()
+  author_id: number;
 
   @ManyToOne(() => User, (user) => user.posts, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'author_id' })
   author: User;
 
   @OneToMany(() => Like, (like) => like.post, { cascade: true })

@@ -1,9 +1,10 @@
-import { api, PostData, CreatePostData, UpdatePostData } from './api';
+import { api } from "./api";
+import type { PostData, CreatePostData, UpdatePostData } from "./api";
 
 export const postService = {
   async getPosts(userId?: string): Promise<PostData[]> {
     const params = userId ? { userId } : {};
-    const response = await api.get('/posts', { params });
+    const response = await api.get("/posts", { params });
     return response.data;
   },
 
@@ -13,14 +14,18 @@ export const postService = {
     return response.data;
   },
 
-  async getPostsByAuthor(authorId: string, userId?: string): Promise<PostData[]> {
-    const params = userId ? { userId } : {};
-    const response = await api.get(`/posts/user/${authorId}`, { params });
-    return response.data;
-  },
+  // 작성자별 게시물 조회 (백엔드에 구현되지 않음 - 임시 제거)
+  // async getPostsByAuthor(
+  //   authorId: string,
+  //   userId?: string
+  // ): Promise<PostData[]> {
+  //   const params = userId ? { userId } : {};
+  //   const response = await api.get(`/posts/user/${authorId}`, { params });
+  //   return response.data;
+  // },
 
   async createPost(postData: CreatePostData): Promise<PostData> {
-    const response = await api.post('/posts', postData);
+    const response = await api.post("/posts", postData);
     return response.data;
   },
 
@@ -33,18 +38,17 @@ export const postService = {
     await api.delete(`/posts/${id}`);
   },
 
-  async toggleLike(postId: string): Promise<{ isLiked: boolean; likesCount: number }> {
-    const response = await api.post(`/likes/${postId}/toggle`);
+  async toggleLike(
+    postId: string
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
+    const response = await api.post(`/posts/${postId}/likes/toggle`);
     return response.data;
   },
 
-  async getLikeStatus(postId: string): Promise<{ isLiked: boolean }> {
-    const response = await api.get(`/likes/${postId}/status`);
-    return response.data;
-  },
-
-  async getLikesCount(postId: string): Promise<{ likesCount: number }> {
-    const response = await api.get(`/likes/${postId}/count`);
-    return response.data;
+  async removeLike(
+    postId: string,
+    likeId: string
+  ): Promise<void> {
+    await api.delete(`/posts/${postId}/likes/${likeId}`);
   },
 };

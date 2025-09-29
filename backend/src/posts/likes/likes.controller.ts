@@ -1,10 +1,11 @@
 import {
   Controller,
   Post,
+  Get,
   Param,
   UseGuards,
   Request,
-  Delete
+  Delete,
 } from '@nestjs/common';
 import { LikesService } from './likes.service';
 import { JwtAuthGuard } from '../../auth/jwt-auth.guard';
@@ -18,8 +19,8 @@ export class LikesController {
   async addLike(
     @Param('postId') postId: string,
     @Request() req: any,
-  ): Promise<{ likeId: string; likesCount: number }> {
-    return this.likesService.addLike(postId, req.user.id);
+  ): Promise<{ likeId: number; likesCount: number }> {
+    return this.likesService.addLike(parseInt(postId), parseInt(req.user.id));
   }
 
   @Delete(':postId/likes/:likeId')
@@ -29,6 +30,35 @@ export class LikesController {
     @Param('likeId') likeId: string,
     @Request() req: any,
   ): Promise<void> {
-    return this.likesService.removeLike(likeId, req.user.id);
+    return this.likesService.removeLike(
+      parseInt(likeId),
+      parseInt(req.user.id),
+    );
+  }
+
+  @Get(':postId/likes')
+  @UseGuards(JwtAuthGuard)
+  async getLikeStatus(
+    @Param('postId') postId: string,
+    @Request() req: any,
+  ): Promise<{ isLiked: boolean; likesCount: number }> {
+    const isLiked = await this.likesService.isPostLikedByUser(
+      parseInt(postId),
+      parseInt(req.user.id),
+    );
+    const likesCount = await this.likesService.getLikesCount(parseInt(postId));
+    return { isLiked, likesCount };
+  }
+
+  @Post(':postId/likes/toggle')
+  @UseGuards(JwtAuthGuard)
+  async toggleLike(
+    @Param('postId') postId: string,
+    @Request() req: any,
+  ): Promise<{ isLiked: boolean; likesCount: number; likeId?: number }> {
+    return this.likesService.toggleLike(
+      parseInt(postId),
+      parseInt(req.user.id),
+    );
   }
 }

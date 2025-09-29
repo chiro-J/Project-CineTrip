@@ -8,7 +8,7 @@ import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { tmdbService } from "../../services/tmdbService";
 import {
-  type Movie,
+  // type Movie,
   convertMovieToImage,
   type MovieImage,
 } from "../../types/movie";
@@ -20,7 +20,7 @@ const MovieSearchMain = () => {
 
   const [activeFilter, setActiveFilter] = useState("latest");
   const [searchQuery, setSearchQuery] = useState("");
-  const [movies, setMovies] = useState<Movie[]>([]);
+  // const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [movieImages, setMovieImages] = useState<MovieImage[]>([]);
@@ -44,7 +44,7 @@ const MovieSearchMain = () => {
         response = await tmdbService.getLatestMovies();
       }
 
-      setMovies(response.results);
+      // setMovies(response.results);
       const images = response.results.map(convertMovieToImage);
       setMovieImages(images);
     } catch (err) {
@@ -66,7 +66,7 @@ const MovieSearchMain = () => {
         setError(null);
         try {
           const response = await tmdbService.searchMovies(urlQ);
-          setMovies(response.results);
+          // setMovies(response.results);
           const images = response.results.map(convertMovieToImage);
           setMovieImages(images);
         } catch (err) {
@@ -100,7 +100,7 @@ const MovieSearchMain = () => {
     setError(null);
     try {
       const response = await tmdbService.searchMovies(searchQuery);
-      setMovies(response.results);
+      // setMovies(response.results);
       const images = response.results.map(convertMovieToImage);
       setMovieImages(images);
     } catch (err) {
@@ -108,6 +108,13 @@ const MovieSearchMain = () => {
       console.error("Error searching movies:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 엔터 키 핸들러
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      handleSearch();
     }
   };
 
@@ -143,6 +150,7 @@ const MovieSearchMain = () => {
             placeholder="Enter movie title"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <Button onClick={handleSearch} className="px-8">

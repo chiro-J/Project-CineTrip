@@ -1,27 +1,28 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, Index, ManyToOne } from 'typeorm';
 import { Movie } from '../../movies/entities/movie.entity';
 
 @Entity('locations')
+@Index(['tmdb_id', 'location_name', 'latitude', 'longitude'], { unique: true })
 export class Location {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+  @PrimaryGeneratedColumn()
+  id: number;
 
-  @Column('bigint')
-  tmdbId: number;
+  @Column({ type: 'bigint' })
+  tmdb_id: number;
 
-  @Column()
-  locationName: string;
+  @Column({ type: 'varchar', length: 255 })
+  location_name: string;
 
   @Column({ type: 'text', nullable: true })
-  sceneDescription: string;
+  scene_description: string;
 
   @Column({ type: 'text', nullable: true })
   address: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   country: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true })
   city: string;
 
   @Column({ type: 'decimal', precision: 10, scale: 8, nullable: true })
@@ -30,15 +31,6 @@ export class Location {
   @Column({ type: 'decimal', precision: 11, scale: 8, nullable: true })
   longitude: number;
 
-  @Column({ nullable: true })
-  locationImage: string;
-
-  @ManyToOne(() => Movie, movie => movie.locations, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Movie, { onDelete: 'CASCADE' })
   movie: Movie;
-
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

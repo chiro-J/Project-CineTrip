@@ -10,6 +10,8 @@ import Footer from "../../components/layout/Footer";
 import { type Item } from "../../types/common";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { followService } from "../../services/followService";
+import { userService } from "../../services/userService";
 
 // --- 타입 정의 ---
 type UserProfile = {
@@ -20,53 +22,25 @@ type UserProfile = {
   bio: string;
 };
 
-// --- Mock 데이터 ---
-const allMockUsers: UserProfile[] = [
-  {
-    id: 1,
-    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User1",
-    username: "사용자 이름 1",
-    handle: "traveler_dev",
-    bio: "모험을 즐기는 개발자.",
-  },
-  {
-    id: 2,
-    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User2",
-    username: "다른 사용자 2",
-    handle: "photo_master",
-    bio: "세상을 사진으로 담아냅니다.",
-  },
-  {
-    id: 3,
-    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User3",
-    username: "영화 덕후",
-    handle: "movie_lover",
-    bio: "영화를 사랑하는 사람입니다.",
-  },
-  {
-    id: 4,
-    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User4",
-    username: "여행가",
-    handle: "travel_enthusiast",
-    bio: "세계 여행을 꿈꾸는 모험가입니다.",
-  },
-  {
-    id: 5,
-    avatarUrl: "https://placehold.co/100x100/EFEFEF/333333?text=User5",
-    username: "개발자 김철수",
-    handle: "dev_kim",
-    bio: "풀스택 개발자로 일하고 있습니다.",
-  },
-];
-
-const searchUsers = (query: string): UserProfile[] => {
-  if (!query.trim()) return allMockUsers.slice(0, 2);
-
-  return allMockUsers.filter(user =>
-    user.username.toLowerCase().includes(query.toLowerCase()) ||
-    user.handle.toLowerCase().includes(query.toLowerCase()) ||
-    user.bio.toLowerCase().includes(query.toLowerCase())
-  );
+// --- API 호출 함수 ---
+const searchUsers = async (query: string): Promise<UserProfile[]> => {
+  try {
+    const users = query.trim() 
+      ? await userService.searchUsers(query)
+      : await userService.getAllUsers();
+    
+    // UserSearchResult를 UserProfile로 변환
+    return users.map(user => ({
+      id: user.id,
+      avatarUrl: user.profile_image_url || "https://placehold.co/100x100/EFEFEF/333333?text=User",
+      username: user.username,
+      handle: user.email.split('@')[0], // email에서 handle 생성
+      bio: user.bio || ""
+    }));
+  } catch (error) {
+    console.error('Failed to search users:', error);
+    return [];
+  }
 };
 
 const fetchPosts = (page: number, query?: string): Promise<Item[]> => {
@@ -119,7 +93,10 @@ const PostResults = ({ searchQuery }: { searchQuery: string }) => {
         <GridLayout images={posts} className="md:grid-cols-3 lg:grid-cols-4" />
       </div>
       {selectedItem && (
-        <PostModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <PostModal 
+          item={selectedItem} 
+          onClose={() => setSelectedItem(null)}
+        />
       )}
     </section>
   );
@@ -127,16 +104,56 @@ const PostResults = ({ searchQuery }: { searchQuery: string }) => {
 
 const UserResults = ({ searchQuery }: { searchQuery: string }) => {
   const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const users = searchUsers(searchQuery);
-    setFilteredUsers(users);
+    const loadUsers = async () => {
+      setIsLoading(true);
+      try {
+        const users = await searchUsers(searchQuery);
+        setFilteredUsers(users);
+      } catch (error) {
+        console.error('Failed to load users:', error);
+        setFilteredUsers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadUsers();
   }, [searchQuery]);
 
   const UserCard = ({ user }: { user: UserProfile }) => {
     const [isFollowing, setIsFollowing] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleFollowClick = async (e: React.MouseEvent) => {
+      e.stopPropagation(); // 부모 요소의 클릭 이벤트 방지
+      if (isLoading) return;
+      
+      setIsLoading(true);
+      try {
+        const { isFollowing: newFollowStatus } = await followService.toggleFollow(user.id.toString());
+        setIsFollowing(newFollowStatus);
+        console.log(`${newFollowStatus ? "팔로우" : "언팔로우"}되었습니다!`);
+      } catch (error) {
+        console.error("Failed to toggle follow:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const handleUserCardClick = () => {
+      console.log('Clicked user ID:', user.id, 'Username:', user.username);
+      navigate(`/user/${user.id}`);
+    };
+
     return (
-      <div className="flex flex-wrap items-center justify-between w-full gap-4 py-4">
+      <div 
+        className="flex flex-wrap items-center justify-between w-full gap-4 py-4 cursor-pointer hover:bg-gray-50 rounded-lg transition-colors duration-200"
+        onClick={handleUserCardClick}
+      >
         <div className="flex items-center gap-4">
           <Avatar size="xl" />
           <div className="text-left">
@@ -146,9 +163,10 @@ const UserResults = ({ searchQuery }: { searchQuery: string }) => {
           </div>
         </div>
         <Button
-          onClick={() => setIsFollowing(!isFollowing)}
+          onClick={handleFollowClick}
           variant={isFollowing ? "secondary" : "primary"}
           size="lg"
+          loading={isLoading}
         >
           {isFollowing ? "Following" : "Follow"}
         </Button>
@@ -163,10 +181,15 @@ const UserResults = ({ searchQuery }: { searchQuery: string }) => {
           사용자 ({filteredUsers.length}명)
         </h2>
         <div className="flex flex-col">
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => (
-              <UserCard key={user.id} user={user} />
-            ))
+          {isLoading ? (
+            <div className="py-8 text-center text-gray-500">
+              사용자를 검색 중...
+            </div>
+          ) : filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => {
+              console.log('Rendering user:', user.id, user.username);
+              return <UserCard key={user.id} user={user} />;
+            })
           ) : (
             <p className="py-8 text-center text-gray-500">
               "{searchQuery}" 검색어에 해당하는 사용자가 없습니다.
@@ -182,7 +205,7 @@ const UserResults = ({ searchQuery }: { searchQuery: string }) => {
 // --- 메인 검색 페이지 (사용자만 남김) ---
 const SearchResultPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [showScrollButton, setShowScrollButton] = useState(false);
 

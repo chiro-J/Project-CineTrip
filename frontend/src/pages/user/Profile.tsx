@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import { Avatar } from "../../components/ui/Avatar";
 import Card from "../../components/ui/Card";
@@ -7,7 +8,8 @@ import Header from "../../components/layout/Header";
 import SideNavigationBar from "../../components/layout/SideNavigationBar";
 import { type Item } from "../../types/common";
 import PostModal from "../../components/post/PostModal";
-import { useAuth } from "../../contexts/AuthContext";
+import { api } from "../../services/api";
+// import { useAuth } from "../../contexts/AuthContext";
 
 // 테스트용 모의(mock) 데이터입니다. 실제로는 API를 통해 받아오게 됩니다.
 // 이미지 URL은 AWS S3 URL을 가정합니다.
@@ -86,7 +88,14 @@ const EmptyState: React.FC<{
  * 사용자 프로필 페이지 컴포넌트
  */
 const Profile = () => {
-  const { user } = useAuth();
+  const { userId } = useParams<{ userId: string }>();
+  // const { user } = useAuth();
+  const navigate = useNavigate();
+  const [profileUser, setProfileUser] = useState<any>(null);
+  const [userPhotos, setUserPhotos] = useState<any[]>([]);
+  const [photosLoading, setPhotosLoading] = useState(false);
+  const [photosError, setPhotosError] = useState<string | null>(null);
+  
   // '추천 장소' 섹션 확장 여부를 위한 State
   const [isRecommendedExpanded, setIsRecommendedExpanded] = useState(false);
   // 스크롤 컨테이너를 참조하기 위한 ref
@@ -94,8 +103,69 @@ const Profile = () => {
   // 팔로우 여부를 위한 State
   const [isFollowing, setIsFollowing] = useState(false);
 
+  // URL 파라미터로 받은 userId로 유저 정보 가져오기
+  useEffect(() => {
+    console.log('Profile page - Received userId:', userId);
+    const fetchUser = async () => {
+      if (userId) {
+        try {
+          console.log('Fetching user data for ID:', userId);
+          const response = await api.get(`/user/${userId}`);
+          setProfileUser(response.data);
+          console.log('User data received:', response.data);
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+        }
+      }
+    };
+    fetchUser();
+  }, [userId]);
+
+  // 사용자 사진 가져오기
+  useEffect(() => {
+    const fetchUserPhotos = async () => {
+      if (!userId) return;
+      
+      setPhotosLoading(true);
+      setPhotosError(null);
+      
+      try {
+        console.log('Fetching user photos for ID:', userId);
+        const response = await api.get(`/posts?userId=${userId}`);
+        const photos = response.data.map((post: any) => ({
+          id: post.id.toString(),
+          src: post.image_url || post.imageUrl || 'https://via.placeholder.com/400x300?text=No+Image',
+          alt: post.title || 'User Photo',
+          likes: post.likesCount || 0,
+          location: post.location || '',
+          description: post.description || '',
+          authorId: post.authorId,
+          authorName: post.author?.username || 'Unknown User',
+          title: post.title,
+          image_url: post.image_url || post.imageUrl,
+          author_id: post.authorId,
+          author: post.author,
+          createdAt: post.createdAt,
+          updatedAt: post.updatedAt,
+        }));
+        
+        setUserPhotos(photos);
+        console.log('User photos received:', photos);
+      } catch (error) {
+        console.error('Failed to fetch user photos:', error);
+        setPhotosError('사진을 불러오는데 실패했습니다.');
+      } finally {
+        setPhotosLoading(false);
+      }
+    };
+
+    fetchUserPhotos();
+  }, [userId]);
+
   const handleClick = () => {
-    console.log("Button clicked!");
+    if (userId) {
+      navigate(`/user/${userId}/gallery`);
+    }
   };
 
   const [selectedImage, setSelectedImage] = useState<Item | null>(null);
@@ -106,8 +176,8 @@ const Profile = () => {
     const imgElement = target.closest("img"); // 클릭된 요소가 이미지인지 확인합니다.
 
     if (imgElement && imgElement.src) {
-      // 클릭된 이미지의 src와 일치하는 데이터를 MOCK_GRID_IMAGES3에서 찾습니다.
-      const foundImage = MOCK_GRID_IMAGES1.find(
+      // 클릭된 이미지의 src와 일치하는 데이터를 userPhotos에서 찾습니다.
+      const foundImage = userPhotos.find(
         (img) => img.src === imgElement.src
       );
       if (foundImage) {
@@ -144,14 +214,14 @@ const Profile = () => {
           <section className="flex flex-col items-center justify-between mb-20 sm:flex-row">
             <div className="flex items-center">
               <Avatar
-                src={user?.avatarUrl || undefined}
+                src={profileUser?.profileImageUrl || undefined}
                 size="lg"
-                fallback={user?.username?.charAt(0).toUpperCase()}
+                fallback={profileUser?.username?.charAt(0).toUpperCase()}
               />
               <div className="ml-6">
                 <div className="flex items-center gap-2">
                   <h2 className="text-2xl font-bold">
-                    {user?.username || "사용자 이름"}
+                    {profileUser?.username || "사용자 이름"}
                   </h2>
                   <svg
                     className="w-4 h-4 text-gray-400"
@@ -261,14 +331,23 @@ const Profile = () => {
               </Button>
             </div>
             <div onClick={handleUserImageClick} className="cursor-pointer">
-              {MOCK_GRID_IMAGES1.length > 0 ? (
+              {photosLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="w-8 h-8 mb-4 border-4 border-blue-200 rounded-full border-t-blue-600 animate-spin"></div>
+                  <div className="text-lg text-gray-600">사진을 불러오는 중...</div>
+                </div>
+              ) : photosError ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="text-lg text-red-600">{photosError}</div>
+                </div>
+              ) : userPhotos.length > 0 ? (
                 <GridLayout
-                  images={MOCK_GRID_IMAGES1}
+                  images={userPhotos}
                   className="grid-cols-3"
                 />
               ) : (
                 <EmptyState
-                  message={`${user?.username}님이 업로드한 사진이 없습니다.`}
+                  message={`${profileUser?.username || '사용자'}님이 업로드한 사진이 없습니다.`}
                 />
               )}
             </div>
@@ -287,7 +366,7 @@ const Profile = () => {
               <GridLayout images={MOCK_GRID_IMAGES2} className="grid-cols-5" />
             ) : (
               <EmptyState
-                message={`${user?.username}님이 감상한 영화가 없습니다.`}
+                message={`${profileUser?.username || '사용자'}님이 감상한 영화가 없습니다.`}
               />
             )}
           </section>
@@ -297,6 +376,11 @@ const Profile = () => {
           <PostModal
             item={selectedImage}
             onClose={() => setSelectedImage(null)} // 모달을 닫을 때 state를 null로 초기화합니다.
+            authorId={typeof selectedImage.authorId === 'number' ? selectedImage.authorId : parseInt(selectedImage.authorId?.toString() || '0')}
+            authorName={selectedImage.authorName || profileUser?.username || '알 수 없는 사용자'}
+            photoId={selectedImage.id.toString()}
+            locationLabel={selectedImage.location || selectedImage.alt || '위치 정보 없음'}
+            descriptionText={selectedImage.description || '설명 없음'}
           />
         )}
       </div>

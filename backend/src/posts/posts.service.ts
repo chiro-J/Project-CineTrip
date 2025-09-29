@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from './entities/post.entity';
@@ -16,31 +20,50 @@ export class PostsService {
     private likeRepository: Repository<Like>,
   ) {}
 
-  async create(createPostDto: CreatePostDto, authorId: string): Promise<PostResponseDto> {
+  async create(
+    createPostDto: CreatePostDto,
+    authorId: number,
+  ): Promise<PostResponseDto> {
     const post = this.postRepository.create({
       ...createPostDto,
-      authorId,
+      author_id: authorId,
     });
 
     const savedPost = await this.postRepository.save(post);
-    return this.findOne(savedPost.id, authorId);
+    
+    // author 관계를 포함해서 다시 조회
+    const postWithAuthor = await this.postRepository.findOne({
+      where: { id: savedPost.id },
+      relations: ['author'],
+    });
+    
+    if (!postWithAuthor) {
+      throw new NotFoundException('Post not found');
+    }
+    
+    return await this.mapToResponseDto(postWithAuthor, false);
   }
 
-  async findAll(userId?: string): Promise<PostResponseDto[]> {
+  async findAll(userId?: number): Promise<PostResponseDto[]> {
+    const whereCondition = userId ? { author_id: userId } : {};
+    
     const posts = await this.postRepository.find({
+      where: whereCondition,
       relations: ['author'],
       order: { createdAt: 'DESC' },
     });
 
     return Promise.all(
       posts.map(async (post) => {
-        const isLiked = userId ? await this.isPostLikedByUser(post.id, userId) : false;
-        return this.mapToResponseDto(post, isLiked);
-      })
+        const isLiked = userId
+          ? await this.isPostLikedByUser(post.id, userId)
+          : false;
+        return await this.mapToResponseDto(post, isLiked);
+      }),
     );
   }
 
-  async findOne(id: string, userId?: string): Promise<PostResponseDto> {
+  async findOne(id: number, userId?: number): Promise<PostResponseDto> {
     const post = await this.postRepository.findOne({
       where: { id },
       relations: ['author'],
@@ -54,14 +77,18 @@ export class PostsService {
     return this.mapToResponseDto(post, isLiked);
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto, userId: string): Promise<PostResponseDto> {
+  async update(
+    id: number,
+    updatePostDto: UpdatePostDto,
+    userId: number,
+  ): Promise<PostResponseDto> {
     const post = await this.postRepository.findOne({ where: { id } });
 
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.authorId !== userId) {
+    if (post.author_id !== userId) {
       throw new ForbiddenException('You can only update your own posts');
     }
 
@@ -69,60 +96,80 @@ export class PostsService {
     return this.findOne(id, userId);
   }
 
-  async remove(id: string, userId: string): Promise<void> {
+  async remove(id: number, userId: number): Promise<void> {
     const post = await this.postRepository.findOne({ where: { id } });
 
     if (!post) {
       throw new NotFoundException('Post not found');
     }
 
-    if (post.authorId !== userId) {
+    if (post.author_id !== userId) {
       throw new ForbiddenException('You can only delete your own posts');
     }
 
     await this.postRepository.remove(post);
   }
 
-  async findByAuthor(authorId: string, userId?: string): Promise<PostResponseDto[]> {
+  async findByAuthor(
+    authorId: number,
+    userId?: number,
+  ): Promise<PostResponseDto[]> {
     const posts = await this.postRepository.find({
-      where: { authorId },
+      where: { author_id: authorId },
       relations: ['author'],
       order: { createdAt: 'DESC' },
     });
 
     return Promise.all(
       posts.map(async (post) => {
-        const isLiked = userId ? await this.isPostLikedByUser(post.id, userId) : false;
-        return this.mapToResponseDto(post, isLiked);
-      })
+        const isLiked = userId
+          ? await this.isPostLikedByUser(post.id, userId)
+          : false;
+        return await this.mapToResponseDto(post, isLiked);
+      }),
     );
   }
 
-  private async isPostLikedByUser(postId: string, userId: string): Promise<boolean> {
+  private async isPostLikedByUser(
+    postId: number,
+    userId: number,
+  ): Promise<boolean> {
     const like = await this.likeRepository.findOne({
-      where: { postId, userId },
+      where: { post_id: postId, user_id: userId },
     });
     return !!like;
   }
 
-  private mapToResponseDto(post: Post, isLiked: boolean = false): PostResponseDto {
+  private async mapToResponseDto(
+    post: Post,
+    isLiked: boolean = false,
+  ): Promise<PostResponseDto> {
+    const likesCount = await this.getLikesCount(post.id);
+    
     return {
       id: post.id,
       title: post.title,
       description: post.description,
-      imageUrl: post.imageUrl,
+      imageUrl: post.image_url,
       location: post.location,
-      likesCount: post.likesCount,
-      commentsCount: post.commentsCount,
-      authorId: post.authorId,
-      author: {
+      authorId: post.author_id,
+      author: post.author ? {
         id: post.author.id,
         username: post.author.username,
-        profileImageUrl: post.author.profileImageUrl,
+        profileImageUrl: post.author.profile_image_url,
+      } : {
+        id: post.author_id,
+        username: 'Unknown User',
+        profileImageUrl: undefined,
       },
       isLiked,
+      likesCount,
       createdAt: post.createdAt,
       updatedAt: post.updatedAt,
     };
+  }
+
+  private async getLikesCount(postId: number): Promise<number> {
+    return this.likeRepository.count({ where: { post_id: postId } });
   }
 }

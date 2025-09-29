@@ -1,10 +1,10 @@
 export class CommentResponseDto {
-  id: string;
+  id: number;
   text: string;
-  userId: string;
-  postId: string;
+  userId: number;
+  postId: number;
   user: {
-    id: string;
+    id: number;
     username: string;
     profileImageUrl?: string;
   };
